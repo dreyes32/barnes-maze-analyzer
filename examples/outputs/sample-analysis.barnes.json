@@ -3,8 +3,8 @@
   "name": "Salk sample videos",
   "schemaVersion": 1,
   "appVersion": "1.0.0",
-  "createdAt": "2026-08-31T20:30:48.405Z",
-  "updatedAt": "2026-08-31T20:30:48.405Z",
+  "createdAt": "2026-08-31T21:53:33.193Z",
+  "updatedAt": "2026-08-31T21:53:33.193Z",
   "parameters": {
     "sampling": {
       "targetObservationsPerSecond": 12
@@ -42,7 +42,7 @@
   },
   "trials": [
     {
-      "id": "trial_a67a5ab9-1a15-4396-b535-55aae084f53a",
+      "id": "trial_fd47d79d-5f0f-4561-b07d-9d3116aa46f7",
       "source": {
         "fileName": "test50.mp4",
         "fileSize": 2333495,
@@ -128014,13 +128014,13 @@
           }
         ],
         "analysisSamplingHz": 15.005417118093176,
-        "startedAt": "2026-08-31T20:29:50.067Z",
-        "finishedAt": "2026-08-31T20:29:50.070Z"
+        "startedAt": "2026-08-31T21:52:35.211Z",
+        "finishedAt": "2026-08-31T21:52:35.229Z"
       },
       "corrections": [],
       "events": [
         {
-          "id": "evt_738d6546-ffc3-4dba-8d08-42db97550917",
+          "id": "evt_9cde33c7-818f-4736-a075-2b040127e04d",
           "type": "hole-investigation",
           "holeIndex": 6,
           "startSeconds": 15.466666666666667,
@@ -128033,7 +128033,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_991c58c6-593a-44fc-b9ca-a9cebf48a8ec",
+          "id": "evt_51f36128-8510-4860-ad46-c5d5febc5928",
           "type": "hole-investigation",
           "holeIndex": 8,
           "startSeconds": 26.666666666666668,
@@ -128046,7 +128046,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_f90d8722-6736-4a78-b30e-418c43b465c2",
+          "id": "evt_86ac3307-19ed-4ce4-8fb2-b860c3b867a3",
           "type": "hole-investigation",
           "holeIndex": 9,
           "startSeconds": 31.333333333333332,
@@ -128059,7 +128059,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_7e41e82a-0602-4d0d-8219-cb8c6c449965",
+          "id": "evt_de40d239-bbda-457f-a273-375f1d353833",
           "type": "hole-investigation",
           "holeIndex": 11,
           "startSeconds": 35.2,
@@ -128072,7 +128072,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_34af9827-6c6c-4124-93ce-bee22a387e30",
+          "id": "evt_0a961258-da2a-4951-a599-e3372d26b216",
           "type": "hole-investigation",
           "holeIndex": 6,
           "startSeconds": 44.6,
@@ -128086,7 +128086,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_a170de3a-c514-4123-9ceb-cfa751f2c406",
+          "id": "evt_002db0ec-85c4-422f-8b7e-ec4c3adba3da",
           "type": "hole-investigation",
           "holeIndex": 7,
           "startSeconds": 51.53333333333333,
@@ -128099,7 +128099,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_e6ad948d-9aae-4095-aabf-27545d0ecc35",
+          "id": "evt_7ae83eb6-bdc6-4d1b-a7ce-d3465bb3ee33",
           "type": "hole-investigation",
           "holeIndex": 9,
           "startSeconds": 57.93333333333333,
@@ -128112,7 +128112,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_d36ee210-a397-4ede-a22e-7702daf657a5",
+          "id": "evt_fae03739-e6a7-4ba2-80da-2ab3fe66e422",
           "type": "hole-investigation",
           "holeIndex": 10,
           "startSeconds": 60.266666666666666,
@@ -128125,7 +128125,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_e392edca-e8b4-4e77-bf14-fc153686e60f",
+          "id": "evt_97ccb16e-5c82-40df-aeb8-8352ba43ecea",
           "type": "hole-investigation",
           "holeIndex": 11,
           "startSeconds": 61.6,
@@ -128138,7 +128138,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_cf5f1106-9a80-454b-ac7e-b42a54b5f1cc",
+          "id": "evt_0b87b7a1-f879-404c-9347-263fff8bddd0",
           "type": "hole-investigation",
           "holeIndex": 13,
           "startSeconds": 67.4,
@@ -128152,7 +128152,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_67458ee5-9fe6-42c1-b59c-d180ae22a845",
+          "id": "evt_b9d8ddd9-47c4-430f-950a-93010521b48c",
           "type": "hole-investigation",
           "holeIndex": 14,
           "startSeconds": 68.33333333333333,
@@ -128165,7 +128165,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_ecc492ac-c79b-40a0-b88d-a2e8134bb9ea",
+          "id": "evt_6af47937-a6ba-445e-a759-6e33c5744c6c",
           "type": "hole-investigation",
           "holeIndex": 16,
           "startSeconds": 78.66666666666667,
@@ -128178,7 +128178,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_7071475c-124f-49dd-a0e4-07e27f783e9e",
+          "id": "evt_5f995067-d0f6-415f-b226-32715494c021",
           "type": "hole-investigation",
           "holeIndex": 19,
           "startSeconds": 86.26666666666667,
@@ -128191,7 +128191,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_a9c86c41-c034-4d22-bea7-d4734188b64a",
+          "id": "evt_636aad62-7efa-4ce8-b0d0-76b06232852c",
           "type": "hole-investigation",
           "holeIndex": 4,
           "startSeconds": 92.86666666666666,
@@ -128204,7 +128204,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_065bccf9-4ef2-4e83-b76f-c3d118c14a89",
+          "id": "evt_c8c1ace9-6a3f-4486-b943-00503649d6e6",
           "type": "target-investigation",
           "holeIndex": 5,
           "startSeconds": 93.8,
@@ -128218,7 +128218,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_267cb421-a4c3-4671-a7f1-95789dfe5b6d",
+          "id": "evt_3379a680-21c3-43ef-befd-740599c4f7cf",
           "type": "hole-investigation",
           "holeIndex": 7,
           "startSeconds": 101.4,
@@ -128231,7 +128231,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_5b634e40-ee99-4a88-8f9f-878a8d7462f6",
+          "id": "evt_bfc52af8-1a1f-4074-8980-f632e129c4f3",
           "type": "hole-investigation",
           "holeIndex": 7,
           "startSeconds": 104.93333333333334,
@@ -128244,7 +128244,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_01f5a212-0e21-4202-b0fb-ceccd7bbe02a",
+          "id": "evt_c0b32202-484d-48e6-86c7-0971dccd4414",
           "type": "hole-investigation",
           "holeIndex": 9,
           "startSeconds": 111.6,
@@ -128257,7 +128257,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_45b97644-e38d-4f87-b30b-a2d57501ba92",
+          "id": "evt_fcc10b40-c2a6-4f99-b143-df8d2254d4f0",
           "type": "hole-investigation",
           "holeIndex": 10,
           "startSeconds": 112.8,
@@ -128270,7 +128270,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_0652f420-0143-4b01-aecf-a43693b672f0",
+          "id": "evt_e9aeaa14-36e6-4fd3-bdd0-359f2b308615",
           "type": "hole-investigation",
           "holeIndex": 13,
           "startSeconds": 117.06666666666666,
@@ -128284,7 +128284,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_57e3f5ff-c7b8-4211-a637-a3e362448102",
+          "id": "evt_e4d70873-6a87-4dba-a122-fa57370785f3",
           "type": "hole-investigation",
           "holeIndex": 15,
           "startSeconds": 120.26666666666667,
@@ -128297,7 +128297,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_c75f6b80-d4b2-4ab2-b5ee-671fb95dcc2e",
+          "id": "evt_967b6e02-04c7-4cc2-ac2c-9bc618b1799a",
           "type": "hole-investigation",
           "holeIndex": 0,
           "startSeconds": 124.33333333333333,
@@ -128310,7 +128310,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_29057997-0043-4ac5-a311-553b45f4c6aa",
+          "id": "evt_de86b04f-052a-4416-9e9c-30da57dad7a3",
           "type": "hole-investigation",
           "holeIndex": 4,
           "startSeconds": 132.06666666666666,
@@ -128323,7 +128323,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_0550c807-9d7e-4f27-83a4-bdb6554cdda7",
+          "id": "evt_80729dd8-49a0-4b95-b11e-17bafaacb8ce",
           "type": "target-investigation",
           "holeIndex": 5,
           "startSeconds": 133.4,
@@ -128336,7 +128336,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_652d4277-f441-46e4-845c-62dfa85ef22d",
+          "id": "evt_46c3c6d2-4f05-4b68-aecc-d472fb9a3265",
           "type": "hole-investigation",
           "holeIndex": 6,
           "startSeconds": 136.2,
@@ -128349,7 +128349,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_1cc59612-7223-4fdb-9bb2-96683ab67a3e",
+          "id": "evt_2a658e9a-120b-43ab-857c-c6216839f2d9",
           "type": "hole-investigation",
           "holeIndex": 8,
           "startSeconds": 140.13333333333333,
@@ -128362,7 +128362,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_7f2b64b8-0b15-4ae8-8a81-b89436eb3921",
+          "id": "evt_8d63c8b8-ab89-452c-b1fc-93a2f66d9de2",
           "type": "hole-investigation",
           "holeIndex": 9,
           "startSeconds": 142,
@@ -128375,7 +128375,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_6cdce149-bb49-4413-a273-77b398eadf66",
+          "id": "evt_75a86e7a-940a-4dd8-a612-45576ae54fc1",
           "type": "hole-investigation",
           "holeIndex": 10,
           "startSeconds": 143.06666666666666,
@@ -128388,7 +128388,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_f6e8cd1a-67ca-43d4-8075-5af6328bbba8",
+          "id": "evt_ba80c1f0-4c12-4c7a-85db-58f18f74bfee",
           "type": "hole-investigation",
           "holeIndex": 13,
           "startSeconds": 147.8,
@@ -128402,7 +128402,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_a7f75ce3-6a14-4b2d-bea9-2f42d5310020",
+          "id": "evt_2d7080f3-dced-4d2f-9713-c11acfeb3ae3",
           "type": "hole-investigation",
           "holeIndex": 16,
           "startSeconds": 151.93333333333334,
@@ -128415,7 +128415,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_08b8092e-eb9c-46d6-bad5-608556652a8d",
+          "id": "evt_8767ed63-76fd-4a9c-9e9e-8ec666045325",
           "type": "target-investigation",
           "holeIndex": 5,
           "startSeconds": 168.8,
@@ -128436,7 +128436,7 @@
         "totalErrors": 28,
         "pathLengthCm": 1253.7852830989489,
         "pathLengthPx": 5332.031918233992,
-        "meanSpeedCmPerSec": 6.980987099660074,
+        "meanSpeedCmPerSec": 6.980987099660072,
         "medianSpeedCmPerSec": 3.652095306424542,
         "targetQuadrantTimeSeconds": 82.33333333333333,
         "targetQuadrantPercent": 45.84261321455085,
@@ -128455,6 +128455,8 @@
           "perimeterOccupancy": 0.9239332096474954,
           "centerCrossings": 1,
           "uniqueHolesInvestigated": 14,
+          "transitionCount": 30,
+          "adjacentTransitionCount": 11,
           "adjacencyRatio": 0.36666666666666664,
           "directionalConsistency": 1
         },
@@ -128462,7 +128464,7 @@
           "Classified random: the path does not meet the spatial (direct) or serial (adjacent-hole) rules.",
           "14 primary errors before the first target investigation.",
           "Path efficiency (straight-line to target / traveled path) is 3%.",
-          "5 of 13 consecutive hole transitions were adjacent (including hole 20 → 1).",
+          "11 of 30 consecutive hole transitions were adjacent (including hole 20 → 1).",
           "92% of tracked observations were in the outer arena.",
           "Directional consistency of adjacent visits is 100%."
         ]
@@ -128487,7 +128489,7 @@
       "videoRelinkRequired": true
     },
     {
-      "id": "trial_12c2c73f-5160-43f6-9d28-4e2eda0819db",
+      "id": "trial_e8bd80fb-696e-42e6-adcf-a382d2287ea8",
       "source": {
         "fileName": "test51.mp4",
         "fileSize": 455830,
@@ -164461,13 +164463,13 @@
           }
         ],
         "analysisSamplingHz": 15.005265005265006,
-        "startedAt": "2026-08-31T20:30:28.894Z",
-        "finishedAt": "2026-08-31T20:30:28.894Z"
+        "startedAt": "2026-08-31T21:53:12.565Z",
+        "finishedAt": "2026-08-31T21:53:12.565Z"
       },
       "corrections": [],
       "events": [
         {
-          "id": "evt_88dba55c-8f06-402d-934e-90fc6f96b902",
+          "id": "evt_a953d25c-6c4d-4426-bd8e-fdfa2de7a0d3",
           "type": "hole-investigation",
           "holeIndex": 12,
           "startSeconds": 6.006,
@@ -164480,7 +164482,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_0f6b805f-6dcf-4726-bf3f-ad5a28adb399",
+          "id": "evt_ebdae539-ffd5-418b-9307-1d6f62cfc0be",
           "type": "hole-investigation",
           "holeIndex": 12,
           "startSeconds": 6.339666666666667,
@@ -164493,7 +164495,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_197d2691-0a4d-4565-a085-0ec7b8942540",
+          "id": "evt_1accf9fe-d6e9-4361-a3ec-da641617264f",
           "type": "hole-investigation",
           "holeIndex": 13,
           "startSeconds": 8.875533333333333,
@@ -164506,7 +164508,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_0fcc9d8d-f3f8-4b99-8a66-4881b924694c",
+          "id": "evt_51731059-77b4-4402-b564-a2b257608297",
           "type": "hole-investigation",
           "holeIndex": 13,
           "startSeconds": 10.276933333333334,
@@ -164519,7 +164521,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_f4106428-d98b-481c-a5b6-5c7282521e0d",
+          "id": "evt_b03861c6-dde9-41f7-9797-faf75abc911d",
           "type": "hole-investigation",
           "holeIndex": 12,
           "startSeconds": 13.079733333333333,
@@ -164532,7 +164534,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_27e01f3b-0a3a-4716-8801-cc3dfcb10209",
+          "id": "evt_fc99dcf8-fd3f-431b-9721-44e5a00c462e",
           "type": "hole-investigation",
           "holeIndex": 11,
           "startSeconds": 24.157466666666668,
@@ -164546,7 +164548,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_15485789-8545-48ca-852c-1382692138de",
+          "id": "evt_45bb6a62-7053-463a-bde7-75277ef6647c",
           "type": "hole-investigation",
           "holeIndex": 11,
           "startSeconds": 25.158466666666666,
@@ -164560,7 +164562,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_f5c63ad5-680b-4664-9876-88cfa7ae78a7",
+          "id": "evt_97caa087-1ebb-4bac-bf5d-dac76ce178a5",
           "type": "hole-investigation",
           "holeIndex": 18,
           "startSeconds": 33.233200000000004,
@@ -164573,7 +164575,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_02755f26-8c61-403b-b20e-48d287ea460b",
+          "id": "evt_918cc181-bc02-448a-ae44-1011b923c7e2",
           "type": "hole-investigation",
           "holeIndex": 18,
           "startSeconds": 34.6346,
@@ -164586,7 +164588,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_43fc3431-975e-4e06-a4af-3fdabe8dec89",
+          "id": "evt_782bc2fd-bf92-4796-a78f-e3483ab3bb9a",
           "type": "target-investigation",
           "holeIndex": 19,
           "startSeconds": 35.96926666666667,
@@ -164600,7 +164602,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_0043d347-f1dc-4349-b038-1e7bafde63a7",
+          "id": "evt_b4a0a8d0-86c2-49f7-ba71-23c13643fd88",
           "type": "target-investigation",
           "holeIndex": 19,
           "startSeconds": 42.6426,
@@ -164614,7 +164616,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_f02bc62f-5cd0-438c-a655-fc15852b0f67",
+          "id": "evt_ad6b96f2-3317-4643-aedb-b53cf4994501",
           "type": "target-investigation",
           "holeIndex": 19,
           "startSeconds": 46.513133333333336,
@@ -164637,7 +164639,7 @@
         "totalErrors": 9,
         "pathLengthCm": 217.57802025036344,
         "pathLengthPx": 1042.4617233973456,
-        "meanSpeedCmPerSec": 4.405959316029171,
+        "meanSpeedCmPerSec": 4.4059593160291755,
         "medianSpeedCmPerSec": 1.9979386409910582,
         "targetQuadrantTimeSeconds": 18.685333333333332,
         "targetQuadrantPercent": 37.83783783783783,
@@ -164656,6 +164658,8 @@
           "perimeterOccupancy": 0.8191632928475033,
           "centerCrossings": 2,
           "uniqueHolesInvestigated": 5,
+          "transitionCount": 11,
+          "adjacentTransitionCount": 4,
           "adjacencyRatio": 0.36363636363636365,
           "directionalConsistency": 0.5
         },
@@ -164663,7 +164667,7 @@
           "Classified random: the path does not meet the spatial (direct) or serial (adjacent-hole) rules.",
           "9 primary errors before the first target investigation.",
           "Path efficiency (straight-line to target / traveled path) is 20%.",
-          "1 of 4 consecutive hole transitions were adjacent (including hole 20 → 1).",
+          "4 of 11 consecutive hole transitions were adjacent (including hole 20 → 1).",
           "82% of tracked observations were in the outer arena.",
           "Directional consistency of adjacent visits is 50%."
         ]
@@ -164687,7 +164691,7 @@
       "videoRelinkRequired": true
     },
     {
-      "id": "trial_3e1dfb4e-7f0a-4186-9f41-82691d678426",
+      "id": "trial_0bd64ff3-f385-44e2-8437-4db9ffc11cb5",
       "source": {
         "fileName": "test53.mp4",
         "fileSize": 496723,
@@ -183867,13 +183871,13 @@
           }
         ],
         "analysisSamplingHz": 15.033185840707965,
-        "startedAt": "2026-08-31T20:30:48.402Z",
-        "finishedAt": "2026-08-31T20:30:48.402Z"
+        "startedAt": "2026-08-31T21:53:33.190Z",
+        "finishedAt": "2026-08-31T21:53:33.190Z"
       },
       "corrections": [],
       "events": [
         {
-          "id": "evt_09e9fd18-4dec-4305-be22-1651c32d88ef",
+          "id": "evt_4aae7173-f5e2-47bc-8479-b6d3e656d67c",
           "type": "hole-investigation",
           "holeIndex": 1,
           "startSeconds": 5.466666666666667,
@@ -183886,7 +183890,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_57e60d87-a026-4a2c-afe4-a18e02a7c777",
+          "id": "evt_229009e9-e70c-491e-9368-b581d9ac4ef8",
           "type": "hole-investigation",
           "holeIndex": 3,
           "startSeconds": 23,
@@ -183899,7 +183903,7 @@
           "source": "automatic"
         },
         {
-          "id": "evt_11ea3792-5bc8-4954-9a20-ca015dba414d",
+          "id": "evt_b25c6e72-3871-4e2c-b6a7-25c52b33c35f",
           "type": "target-investigation",
           "holeIndex": 2,
           "startSeconds": 24.866666666666667,
@@ -183921,7 +183925,7 @@
         "totalErrors": 2,
         "pathLengthCm": 105.52461561712477,
         "pathLengthPx": 427.8965182716378,
-        "meanSpeedCmPerSec": 4.198592133307352,
+        "meanSpeedCmPerSec": 4.1985921333073515,
         "medianSpeedCmPerSec": 2.547556256184076,
         "targetQuadrantTimeSeconds": 25.133333333333333,
         "targetQuadrantPercent": 100,
@@ -183940,6 +183944,8 @@
           "perimeterOccupancy": 1,
           "centerCrossings": 0,
           "uniqueHolesInvestigated": 3,
+          "transitionCount": 2,
+          "adjacentTransitionCount": 1,
           "adjacencyRatio": 0.5,
           "directionalConsistency": 1
         },
@@ -183973,5 +183979,5 @@
     }
   ],
   "currentStage": "results",
-  "currentTrialId": "trial_a67a5ab9-1a15-4396-b535-55aae084f53a"
+  "currentTrialId": "trial_fd47d79d-5f0f-4561-b07d-9d3116aa46f7"
 }

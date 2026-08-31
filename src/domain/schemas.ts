@@ -190,6 +190,8 @@ export const trialSchema = z.object({
         perimeterOccupancy: z.number().nullable(),
         centerCrossings: z.number(),
         uniqueHolesInvestigated: z.number(),
+        transitionCount: z.number().optional().default(0),
+        adjacentTransitionCount: z.number().optional().default(0),
         adjacencyRatio: z.number().nullable(),
         directionalConsistency: z.number().nullable(),
       }),

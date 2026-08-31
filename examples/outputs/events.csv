@@ -1,47 +1,47 @@
 source_file,animal_id,event_id,event_type,hole_index_1based,start_s,end_s,duration_s,confidence,source,evidence
-test50.mp4,,evt_738d6546-ffc3-4dba-8d08-42db97550917,hole-investigation,7,15.467,15.800,0.333,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_991c58c6-593a-44fc-b9ca-a9cebf48a8ec,hole-investigation,9,26.667,27.667,1.000,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_f90d8722-6736-4a78-b30e-418c43b465c2,hole-investigation,10,31.333,33.067,1.733,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_7e41e82a-0602-4d0d-8219-cb8c6c449965,hole-investigation,12,35.200,36.933,1.733,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_34af9827-6c6c-4124-93ce-bee22a387e30,hole-investigation,7,44.600,49.000,4.400,0.850,automatic,high-confidence head entered region; body position used as investigation probe
-test50.mp4,,evt_a170de3a-c514-4123-9ceb-cfa751f2c406,hole-investigation,8,51.533,51.733,0.200,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_e6ad948d-9aae-4095-aabf-27545d0ecc35,hole-investigation,10,57.933,59.400,1.467,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_d36ee210-a397-4ede-a22e-7702daf657a5,hole-investigation,11,60.267,60.533,0.267,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_e392edca-e8b4-4e77-bf14-fc153686e60f,hole-investigation,12,61.600,61.933,0.333,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_cf5f1106-9a80-454b-ac7e-b42a54b5f1cc,hole-investigation,14,67.400,67.800,0.400,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
-test50.mp4,,evt_67458ee5-9fe6-42c1-b59c-d180ae22a845,hole-investigation,15,68.333,69.133,0.800,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_ecc492ac-c79b-40a0-b88d-a2e8134bb9ea,hole-investigation,17,78.667,78.933,0.267,0.850,automatic,high-confidence head entered region
-test50.mp4,,evt_7071475c-124f-49dd-a0e4-07e27f783e9e,hole-investigation,20,86.267,86.467,0.200,0.850,automatic,high-confidence head entered region
-test50.mp4,,evt_a9c86c41-c034-4d22-bea7-d4734188b64a,hole-investigation,5,92.867,93.133,0.267,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_065bccf9-4ef2-4e83-b76f-c3d118c14a89,target-investigation,6,93.800,94.333,0.533,0.440,automatic,body position used as investigation probe; first valid investigation of the target hole
-test50.mp4,,evt_267cb421-a4c3-4671-a7f1-95789dfe5b6d,hole-investigation,8,101.400,104.067,2.667,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_5b634e40-ee99-4a88-8f9f-878a8d7462f6,hole-investigation,8,104.933,107.533,2.600,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_01f5a212-0e21-4202-b0fb-ceccd7bbe02a,hole-investigation,10,111.600,111.867,0.267,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_45b97644-e38d-4f87-b30b-a2d57501ba92,hole-investigation,11,112.800,114.667,1.867,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_0652f420-0143-4b01-aecf-a43693b672f0,hole-investigation,14,117.067,117.467,0.400,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
-test50.mp4,,evt_57e3f5ff-c7b8-4211-a637-a3e362448102,hole-investigation,16,120.267,120.467,0.200,0.850,automatic,high-confidence head entered region
-test50.mp4,,evt_c75f6b80-d4b2-4ab2-b5ee-671fb95dcc2e,hole-investigation,1,124.333,124.533,0.200,0.850,automatic,high-confidence head entered region
-test50.mp4,,evt_29057997-0043-4ac5-a311-553b45f4c6aa,hole-investigation,5,132.067,132.267,0.200,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_0550c807-9d7e-4f27-83a4-bdb6554cdda7,target-investigation,6,133.400,133.667,0.267,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_652d4277-f441-46e4-845c-62dfa85ef22d,hole-investigation,7,136.200,136.733,0.533,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_1cc59612-7223-4fdb-9bb2-96683ab67a3e,hole-investigation,9,140.133,140.333,0.200,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_7f2b64b8-0b15-4ae8-8a81-b89436eb3921,hole-investigation,10,142.000,142.333,0.333,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_6cdce149-bb49-4413-a273-77b398eadf66,hole-investigation,11,143.067,143.333,0.267,0.440,automatic,body position used as investigation probe
-test50.mp4,,evt_f6e8cd1a-67ca-43d4-8075-5af6328bbba8,hole-investigation,14,147.800,148.667,0.867,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
-test50.mp4,,evt_a7f75ce3-6a14-4b2d-bea9-2f42d5310020,hole-investigation,17,151.933,152.200,0.267,0.850,automatic,high-confidence head entered region
-test50.mp4,,evt_08b8092e-eb9c-46d6-bad5-608556652a8d,target-investigation,6,168.800,184.600,15.800,0.440,automatic,body position used as investigation probe
-test51.mp4,,evt_88dba55c-8f06-402d-934e-90fc6f96b902,hole-investigation,13,6.006,6.206,0.200,0.850,automatic,high-confidence head entered region
-test51.mp4,,evt_0f6b805f-6dcf-4726-bf3f-ad5a28adb399,hole-investigation,13,6.340,6.673,0.334,0.850,automatic,high-confidence head entered region
-test51.mp4,,evt_197d2691-0a4d-4565-a085-0ec7b8942540,hole-investigation,14,8.876,9.543,0.667,0.850,automatic,high-confidence head entered region
-test51.mp4,,evt_0fcc9d8d-f3f8-4b99-8a66-4881b924694c,hole-investigation,14,10.277,10.477,0.200,0.799,automatic,high-confidence head entered region
-test51.mp4,,evt_f4106428-d98b-481c-a5b6-5c7282521e0d,hole-investigation,13,13.080,23.090,10.010,0.440,automatic,body position used as investigation probe
-test51.mp4,,evt_27e01f3b-0a3a-4716-8801-cc3dfcb10209,hole-investigation,12,24.157,25.025,0.868,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
-test51.mp4,,evt_15485789-8545-48ca-852c-1382692138de,hole-investigation,12,25.158,25.692,0.534,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
-test51.mp4,,evt_f5c63ad5-680b-4664-9876-88cfa7ae78a7,hole-investigation,19,33.233,33.500,0.267,0.850,automatic,high-confidence head entered region
-test51.mp4,,evt_02755f26-8c61-403b-b20e-48d287ea460b,hole-investigation,19,34.635,35.035,0.400,0.850,automatic,high-confidence head entered region
-test51.mp4,,evt_43fc3431-975e-4e06-a4af-3fdabe8dec89,target-investigation,20,35.969,36.570,0.601,0.850,automatic,high-confidence head entered region; first valid investigation of the target hole
-test51.mp4,,evt_0043d347-f1dc-4349-b038-1e7bafde63a7,target-investigation,20,42.643,45.445,2.803,0.738,automatic,high-confidence head entered region; body position used as investigation probe
-test51.mp4,,evt_f02bc62f-5cd0-438c-a655-fc15852b0f67,target-investigation,20,46.513,49.383,2.870,0.700,automatic,body position used as investigation probe; body/contour evidence only; head orientation uncertain; high-confidence head entered region
-test53.mp4,,evt_09e9fd18-4dec-4305-be22-1651c32d88ef,hole-investigation,2,5.467,8.933,3.467,0.440,automatic,body position used as investigation probe
-test53.mp4,,evt_57e60d87-a026-4a2c-afe4-a18e02a7c777,hole-investigation,4,23.000,24.400,1.400,0.440,automatic,body position used as investigation probe
-test53.mp4,,evt_11ea3792-5bc8-4954-9a20-ca015dba414d,target-investigation,3,24.867,30.133,5.267,0.440,automatic,body position used as investigation probe; first valid investigation of the target hole
+test50.mp4,,evt_9cde33c7-818f-4736-a075-2b040127e04d,hole-investigation,7,15.467,15.800,0.333,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_51f36128-8510-4860-ad46-c5d5febc5928,hole-investigation,9,26.667,27.667,1.000,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_86ac3307-19ed-4ce4-8fb2-b860c3b867a3,hole-investigation,10,31.333,33.067,1.733,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_de40d239-bbda-457f-a273-375f1d353833,hole-investigation,12,35.200,36.933,1.733,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_0a961258-da2a-4951-a599-e3372d26b216,hole-investigation,7,44.600,49.000,4.400,0.850,automatic,high-confidence head entered region; body position used as investigation probe
+test50.mp4,,evt_002db0ec-85c4-422f-8b7e-ec4c3adba3da,hole-investigation,8,51.533,51.733,0.200,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_7ae83eb6-bdc6-4d1b-a7ce-d3465bb3ee33,hole-investigation,10,57.933,59.400,1.467,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_fae03739-e6a7-4ba2-80da-2ab3fe66e422,hole-investigation,11,60.267,60.533,0.267,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_97ccb16e-5c82-40df-aeb8-8352ba43ecea,hole-investigation,12,61.600,61.933,0.333,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_0b87b7a1-f879-404c-9347-263fff8bddd0,hole-investigation,14,67.400,67.800,0.400,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
+test50.mp4,,evt_b9d8ddd9-47c4-430f-950a-93010521b48c,hole-investigation,15,68.333,69.133,0.800,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_6af47937-a6ba-445e-a759-6e33c5744c6c,hole-investigation,17,78.667,78.933,0.267,0.850,automatic,high-confidence head entered region
+test50.mp4,,evt_5f995067-d0f6-415f-b226-32715494c021,hole-investigation,20,86.267,86.467,0.200,0.850,automatic,high-confidence head entered region
+test50.mp4,,evt_636aad62-7efa-4ce8-b0d0-76b06232852c,hole-investigation,5,92.867,93.133,0.267,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_c8c1ace9-6a3f-4486-b943-00503649d6e6,target-investigation,6,93.800,94.333,0.533,0.440,automatic,body position used as investigation probe; first valid investigation of the target hole
+test50.mp4,,evt_3379a680-21c3-43ef-befd-740599c4f7cf,hole-investigation,8,101.400,104.067,2.667,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_bfc52af8-1a1f-4074-8980-f632e129c4f3,hole-investigation,8,104.933,107.533,2.600,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_c0b32202-484d-48e6-86c7-0971dccd4414,hole-investigation,10,111.600,111.867,0.267,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_fcc10b40-c2a6-4f99-b143-df8d2254d4f0,hole-investigation,11,112.800,114.667,1.867,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_e9aeaa14-36e6-4fd3-bdd0-359f2b308615,hole-investigation,14,117.067,117.467,0.400,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
+test50.mp4,,evt_e4d70873-6a87-4dba-a122-fa57370785f3,hole-investigation,16,120.267,120.467,0.200,0.850,automatic,high-confidence head entered region
+test50.mp4,,evt_967b6e02-04c7-4cc2-ac2c-9bc618b1799a,hole-investigation,1,124.333,124.533,0.200,0.850,automatic,high-confidence head entered region
+test50.mp4,,evt_de86b04f-052a-4416-9e9c-30da57dad7a3,hole-investigation,5,132.067,132.267,0.200,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_80729dd8-49a0-4b95-b11e-17bafaacb8ce,target-investigation,6,133.400,133.667,0.267,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_46c3c6d2-4f05-4b68-aecc-d472fb9a3265,hole-investigation,7,136.200,136.733,0.533,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_2a658e9a-120b-43ab-857c-c6216839f2d9,hole-investigation,9,140.133,140.333,0.200,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_8d63c8b8-ab89-452c-b1fc-93a2f66d9de2,hole-investigation,10,142.000,142.333,0.333,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_75a86e7a-940a-4dd8-a612-45576ae54fc1,hole-investigation,11,143.067,143.333,0.267,0.440,automatic,body position used as investigation probe
+test50.mp4,,evt_ba80c1f0-4c12-4c7a-85db-58f18f74bfee,hole-investigation,14,147.800,148.667,0.867,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
+test50.mp4,,evt_2d7080f3-dced-4d2f-9713-c11acfeb3ae3,hole-investigation,17,151.933,152.200,0.267,0.850,automatic,high-confidence head entered region
+test50.mp4,,evt_8767ed63-76fd-4a9c-9e9e-8ec666045325,target-investigation,6,168.800,184.600,15.800,0.440,automatic,body position used as investigation probe
+test51.mp4,,evt_a953d25c-6c4d-4426-bd8e-fdfa2de7a0d3,hole-investigation,13,6.006,6.206,0.200,0.850,automatic,high-confidence head entered region
+test51.mp4,,evt_ebdae539-ffd5-418b-9307-1d6f62cfc0be,hole-investigation,13,6.340,6.673,0.334,0.850,automatic,high-confidence head entered region
+test51.mp4,,evt_1accf9fe-d6e9-4361-a3ec-da641617264f,hole-investigation,14,8.876,9.543,0.667,0.850,automatic,high-confidence head entered region
+test51.mp4,,evt_51731059-77b4-4402-b564-a2b257608297,hole-investigation,14,10.277,10.477,0.200,0.799,automatic,high-confidence head entered region
+test51.mp4,,evt_b03861c6-dde9-41f7-9797-faf75abc911d,hole-investigation,13,13.080,23.090,10.010,0.440,automatic,body position used as investigation probe
+test51.mp4,,evt_fc99dcf8-fd3f-431b-9721-44e5a00c462e,hole-investigation,12,24.157,25.025,0.868,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
+test51.mp4,,evt_45bb6a62-7053-463a-bde7-75277ef6647c,hole-investigation,12,25.158,25.692,0.534,0.850,automatic,high-confidence head entered region; body/contour evidence only; head orientation uncertain
+test51.mp4,,evt_97caa087-1ebb-4bac-bf5d-dac76ce178a5,hole-investigation,19,33.233,33.500,0.267,0.850,automatic,high-confidence head entered region
+test51.mp4,,evt_918cc181-bc02-448a-ae44-1011b923c7e2,hole-investigation,19,34.635,35.035,0.400,0.850,automatic,high-confidence head entered region
+test51.mp4,,evt_782bc2fd-bf92-4796-a78f-e3483ab3bb9a,target-investigation,20,35.969,36.570,0.601,0.850,automatic,high-confidence head entered region; first valid investigation of the target hole
+test51.mp4,,evt_b4a0a8d0-86c2-49f7-ba71-23c13643fd88,target-investigation,20,42.643,45.445,2.803,0.738,automatic,high-confidence head entered region; body position used as investigation probe
+test51.mp4,,evt_ad6b96f2-3317-4643-aedb-b53cf4994501,target-investigation,20,46.513,49.383,2.870,0.700,automatic,body position used as investigation probe; body/contour evidence only; head orientation uncertain; high-confidence head entered region
+test53.mp4,,evt_4aae7173-f5e2-47bc-8479-b6d3e656d67c,hole-investigation,2,5.467,8.933,3.467,0.440,automatic,body position used as investigation probe
+test53.mp4,,evt_229009e9-e70c-491e-9368-b581d9ac4ef8,hole-investigation,4,23.000,24.400,1.400,0.440,automatic,body position used as investigation probe
+test53.mp4,,evt_b25c6e72-3871-4e2c-b6a7-25c52b33c35f,target-investigation,3,24.867,30.133,5.267,0.440,automatic,body position used as investigation probe; first valid investigation of the target hole

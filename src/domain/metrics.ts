@@ -98,7 +98,7 @@ export function computeMetrics(options: {
 
   const pathLengthCm = scale ? pathLengthPx / scale : null;
   const meanSpeedCmPerSec =
-    scale && speedsPx.length > 0 ? speedsPx.reduce((a, b) => a + b, 0) / speedsPx.length / scale : null;
+    scale && validTrackedSeconds > 0 ? pathLengthPx / validTrackedSeconds / scale : null;
   const medianSpeedCmPerSec = scale && speedsPx.length > 0 ? (median(speedsPx) ?? 0) / scale : null;
 
   const targetQuadrantPercent =

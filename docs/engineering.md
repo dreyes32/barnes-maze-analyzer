@@ -24,7 +24,7 @@ Raw automatic samples are never overwritten. A correction record stores the prev
 
 ## Video time
 
-`src/video/mp4Metadata.ts` parses `mdhd` / `stts`. `test51` must come out as `15000/1001 ≈ 14.985`, not 15, not 30, and not a duration/frame-count average near 15.005. The parser reports the modal `stts` sample duration as the nominal fps even when leftover edit samples exist. Tracking uses `HTMLVideoElement.currentTime` after each seek, not `frame/fps`.
+`src/video/mp4Metadata.ts` parses `mdhd` / `stts`. `test51` must come out as `15000/1001 ≈ 14.985`, not 15, not 30, and not a duration/frame-count average near 15.005. The parser reports the modal `stts` sample duration as the nominal fps even when leftover edit samples exist. Tracking uses `HTMLVideoElement.currentTime` after each seek, not `frame/fps`. Manual review can step source frames with that timebase; analysis sampling stays separate.
 
 ## Tracking
 

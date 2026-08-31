@@ -4,7 +4,9 @@ import {
   describeTimebase,
   frameIndexToSeconds,
   isNtscFilmFamily,
+  nominalFrameDurationSeconds,
   rationalFps,
+  sourceFrameDurationSeconds,
   speedsFromSamples,
   timebaseFromRational,
 } from "../../src/domain/timebase";
@@ -25,6 +27,10 @@ describe("timebase", () => {
     expect(frameIndexToSeconds(450, timebase)).not.toBeCloseTo(450 / 15, 6);
     expect(frameIndexToSeconds(450, timebase)).not.toBeCloseTo(450 / 30, 3);
     expect(describeTimebase(timebase)).toContain("15000/1001");
+    expect(nominalFrameDurationSeconds(timebase)).toBe(1001 / 15000);
+    expect(sourceFrameDurationSeconds({ timebase })).toBe(1001 / 15000);
+    expect(sourceFrameDurationSeconds({ timebase })).not.toBe(1 / 15);
+    expect(sourceFrameDurationSeconds({ timebase })).not.toBe(1 / 30);
   });
 
   it("refuses hidden 30 fps conversion when given a real timebase", () => {

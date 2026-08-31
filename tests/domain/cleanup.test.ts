@@ -57,4 +57,16 @@ describe("cleanup", () => {
     expect(effective[1].source).toBe("manual");
     expect(effective[1].body).toEqual({ x: 8, y: 9 });
   });
+
+  it("inserts a source-frame correction at its actual timestamp", () => {
+    const raw = [sample(0, { x: 1, y: 1 }), sample(0.1, { x: 2, y: 2 })];
+    const effective = applyManualCorrections(raw, [
+      { timestampSeconds: 0.033, kind: "body-position", correctedValue: { x: 5, y: 6 } },
+    ]);
+    expect(effective).toHaveLength(3);
+    expect(effective[1].timestampSeconds).toBeCloseTo(0.033);
+    expect(effective[1].source).toBe("manual");
+    expect(effective[1].body).toEqual({ x: 5, y: 6 });
+    expect(raw).toHaveLength(2);
+  });
 });

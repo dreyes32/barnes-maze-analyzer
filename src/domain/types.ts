@@ -174,6 +174,8 @@ export type StrategyFeatures = {
   perimeterOccupancy: number | null;
   centerCrossings: number;
   uniqueHolesInvestigated: number;
+  transitionCount: number;
+  adjacentTransitionCount: number;
   adjacencyRatio: number | null;
   directionalConsistency: number | null;
 };

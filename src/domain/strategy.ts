@@ -59,13 +59,24 @@ function visitSequence(events: BehavioralEvent[]): number[] {
     .filter((index): index is number => index !== undefined);
 }
 
-function adjacencyRatio(sequence: number[]): number | null {
-  if (sequence.length < 2) return null;
-  let adjacent = 0;
-  for (let i = 1; i < sequence.length; i += 1) {
-    if (holesAreAdjacent(sequence[i - 1], sequence[i])) adjacent += 1;
+function transitionCounts(sequence: number[]): {
+  transitionCount: number;
+  adjacentTransitionCount: number;
+  adjacencyRatio: number | null;
+} {
+  if (sequence.length < 2) {
+    return { transitionCount: 0, adjacentTransitionCount: 0, adjacencyRatio: null };
   }
-  return adjacent / (sequence.length - 1);
+  let adjacentTransitionCount = 0;
+  for (let i = 1; i < sequence.length; i += 1) {
+    if (holesAreAdjacent(sequence[i - 1], sequence[i])) adjacentTransitionCount += 1;
+  }
+  const transitionCount = sequence.length - 1;
+  return {
+    transitionCount,
+    adjacentTransitionCount,
+    adjacencyRatio: adjacentTransitionCount / transitionCount,
+  };
 }
 
 function directionalConsistency(sequence: number[], holeCount = 20): number | null {
@@ -89,6 +100,7 @@ export function deriveStrategyFeatures(options: {
   metrics: TrialMetrics;
 }): StrategyFeatures {
   const sequence = visitSequence(options.events);
+  const transitions = transitionCounts(sequence);
   return {
     primaryErrors: options.metrics.primaryErrors ?? null,
     primaryLatencySeconds: options.metrics.primaryLatencySeconds ?? null,
@@ -96,7 +108,9 @@ export function deriveStrategyFeatures(options: {
     perimeterOccupancy: perimeterOccupancy(options.samples, options.arena),
     centerCrossings: centerCrossings(options.samples, options.arena),
     uniqueHolesInvestigated: new Set(sequence).size,
-    adjacencyRatio: adjacencyRatio(sequence),
+    transitionCount: transitions.transitionCount,
+    adjacentTransitionCount: transitions.adjacentTransitionCount,
+    adjacencyRatio: transitions.adjacencyRatio,
     directionalConsistency: directionalConsistency(sequence),
   };
 }
@@ -133,9 +147,10 @@ export function classifyStrategy(
     reasoning.push(`Path efficiency (straight-line to target / traveled path) is ${(efficiency * 100).toFixed(0)}%.`);
   }
   if (adjacency !== null) {
-    const visits = Math.max(1, features.uniqueHolesInvestigated);
+    const transitions = features.transitionCount ?? 0;
+    const adjacent = features.adjacentTransitionCount ?? Math.round(adjacency * Math.max(transitions, 1));
     reasoning.push(
-      `${Math.round(adjacency * Math.max(visits - 1, 1))} of ${Math.max(visits - 1, 1)} consecutive hole transitions were adjacent (including hole 20 → 1).`,
+      `${adjacent} of ${transitions} consecutive hole transitions were adjacent (including hole 20 → 1).`,
     );
   }
   if (perimeter !== null) {

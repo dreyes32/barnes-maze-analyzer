@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { investigationTypeForHole } from "../../domain/events";
+import { createId } from "../../domain/ids";
 import { buildReviewIssues } from "../../domain/qc";
-import type { Point } from "../../domain/types";
+import { describeTimebase, sourceFrameDurationSeconds } from "../../domain/timebase";
+import type { BehavioralEvent, Point } from "../../domain/types";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
 import { Banner } from "../ui";
@@ -29,12 +32,20 @@ export function ReviewPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [index, setIndex] = useState(0);
+  const [reviewTime, setReviewTime] = useState(0);
   const [issueIndex, setIssueIndex] = useState(0);
   const [mode, setMode] = useState<"body" | "head">("body");
+  const [editEventId, setEditEventId] = useState<string | null>(null);
+  const [editHole, setEditHole] = useState(1);
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [addHole, setAddHole] = useState(1);
   const url = trial ? getVideoUrl(trial.id) : undefined;
   const samples = trial?.tracking?.effectiveSamples ?? [];
   const issues = useMemo(() => (trial ? buildReviewIssues(trial) : []), [trial]);
   const sample = samples[index];
+  const frameDuration = trial ? sourceFrameDurationSeconds(trial.source) : undefined;
+  const reviewTimestamp = () => videoRef.current?.currentTime ?? reviewTime;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -104,11 +115,45 @@ export function ReviewPage() {
     };
   }, [sample, trial]);
 
+  const seekToTime = (time: number) => {
+    const clamped = Math.max(0, time);
+    setReviewTime(clamped);
+    setIndex(nearestSampleIndex(samples, clamped));
+    if (videoRef.current) videoRef.current.currentTime = clamped;
+  };
+
   const seekTo = (nextIndex: number) => {
     const clamped = Math.max(0, Math.min(samples.length - 1, nextIndex));
     setIndex(clamped);
     const next = samples[clamped];
-    if (videoRef.current && next) videoRef.current.currentTime = next.timestampSeconds;
+    if (next) {
+      setReviewTime(next.timestampSeconds);
+      if (videoRef.current) videoRef.current.currentTime = next.timestampSeconds;
+    }
+  };
+
+  const stepSourceFrame = (direction: -1 | 1) => {
+    if (!frameDuration) return;
+    const video = videoRef.current;
+    const from = video?.currentTime ?? reviewTime;
+    const next = Math.max(0, from + direction * frameDuration);
+    const limit = video && Number.isFinite(video.duration) ? video.duration : next;
+    const target = Math.min(next, limit);
+    if (video) {
+      video.currentTime = target;
+      const applyPresented = (mediaTime: number) => {
+        setReviewTime(mediaTime);
+        setIndex(nearestSampleIndex(samples, mediaTime));
+      };
+      if (typeof video.requestVideoFrameCallback === "function") {
+        video.requestVideoFrameCallback((_now, meta) => applyPresented(meta.mediaTime));
+      } else {
+        applyPresented(target);
+      }
+    } else {
+      setReviewTime(target);
+      setIndex(nearestSampleIndex(samples, target));
+    }
   };
 
   useEffect(() => {
@@ -116,11 +161,13 @@ export function ReviewPage() {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        seekTo(index - 1);
+        if (event.shiftKey) stepSourceFrame(-1);
+        else seekTo(index - 1);
       }
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        seekTo(index + 1);
+        if (event.shiftKey) stepSourceFrame(1);
+        else seekTo(index + 1);
       }
       if (event.key === " " && !(event.target instanceof HTMLButtonElement)) {
         event.preventDefault();
@@ -142,8 +189,7 @@ export function ReviewPage() {
       y: ((event.clientY - rect.top) / rect.height) * videoRef.current.videoHeight,
     };
     addCorrection(trial.id, {
-      timestampSeconds: sample?.timestampSeconds ?? videoRef.current.currentTime,
-      frameIndex: sample?.frameIndex,
+      timestampSeconds: reviewTimestamp(),
       kind: mode === "body" ? "body-position" : "head-position",
       previousValue: mode === "body" ? sample?.body : sample?.head,
       correctedValue: point,
@@ -158,8 +204,9 @@ export function ReviewPage() {
       <section className="card">
         <h2>Review</h2>
         <p className="help">
-          Scrub, jump to issues, and correct points. Automatic values are kept. Manual points use a square marker
-          and a Manual label.
+          Sample buttons jump between tracker observations. Frame buttons step the source video using its
+          parsed timebase (not assumed 30 fps). Corrections use the inspected source timestamp. Automatic
+          values are kept. Manual points use a square marker and a Manual label.
         </p>
         <div className="grid-2">
           <div>
@@ -172,6 +219,7 @@ export function ReviewPage() {
                   playsInline
                   onTimeUpdate={(event) => {
                     const time = event.currentTarget.currentTime;
+                    setReviewTime(time);
                     setIndex(nearestSampleIndex(samples, time));
                   }}
                 />
@@ -195,6 +243,22 @@ export function ReviewPage() {
               <button
                 type="button"
                 className="btn-secondary"
+                disabled={!frameDuration}
+                onClick={() => stepSourceFrame(-1)}
+              >
+                Previous frame
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={!frameDuration}
+                onClick={() => stepSourceFrame(1)}
+              >
+                Next frame
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
                 onClick={() => {
                   const video = videoRef.current;
                   if (!video) return;
@@ -211,14 +275,19 @@ export function ReviewPage() {
                   step="0.01"
                   onBlur={(event) => {
                     const time = Number(event.target.value);
-                    if (Number.isFinite(time)) seekTo(nearestSampleIndex(samples, time));
+                    if (Number.isFinite(time)) seekToTime(time);
                   }}
                 />
               </label>
             </div>
             <p>
-              t = {sample?.timestampSeconds.toFixed(3) ?? "—"} s · {sample?.status ?? "—"} · {sample?.source ?? "—"} ·
-              confidence {sample ? sample.confidence.toFixed(2) : "—"}
+              source t = {reviewTimestamp().toFixed(3)} s
+              {trial.source.timebase ? ` · ${describeTimebase(trial.source.timebase)}` : ""}
+              {frameDuration ? ` · frame step ${frameDuration.toFixed(5)} s` : ""}
+            </p>
+            <p>
+              nearest sample t = {sample?.timestampSeconds.toFixed(3) ?? "—"} s · {sample?.status ?? "—"} ·{" "}
+              {sample?.source ?? "—"} · confidence {sample ? sample.confidence.toFixed(2) : "—"}
             </p>
             <div className="row">
               <button type="button" className={mode === "body" ? "btn" : "btn-secondary"} onClick={() => setMode("body")}>
@@ -232,9 +301,9 @@ export function ReviewPage() {
                 className="btn-secondary"
                 onClick={() =>
                   addCorrection(trial.id, {
-                    timestampSeconds: sample.timestampSeconds,
+                    timestampSeconds: reviewTimestamp(),
                     kind: "tracking-failure",
-                    previousValue: sample.body,
+                    previousValue: sample?.body,
                   })
                 }
               >
@@ -245,9 +314,9 @@ export function ReviewPage() {
                 className="btn-secondary"
                 onClick={() =>
                   addCorrection(trial.id, {
-                    timestampSeconds: sample.timestampSeconds,
+                    timestampSeconds: reviewTimestamp(),
                     kind: "hidden-in-hole",
-                    previousValue: sample.body,
+                    previousValue: sample?.body,
                   })
                 }
               >
@@ -308,7 +377,7 @@ export function ReviewPage() {
                   <button
                     type="button"
                     className="btn-ghost"
-                    onClick={() => seekTo(nearestSampleIndex(samples, event.startSeconds))}
+                    onClick={() => seekToTime(event.startSeconds)}
                   >
                     {event.type} {event.holeIndex !== undefined ? `hole ${event.holeIndex + 1}` : ""} @ {event.startSeconds.toFixed(2)} s ({event.source})
                   </button>
@@ -344,36 +413,156 @@ export function ReviewPage() {
                       </button>
                     </span>
                   ) : null}
+                  {event.type === "hole-investigation" || event.type === "target-investigation" ? (
+                    <span className="row">
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => {
+                          setEditEventId(event.id);
+                          setEditHole((event.holeIndex ?? 0) + 1);
+                          setEditStart(String(event.startSeconds));
+                          setEditEnd(String(event.endSeconds ?? event.startSeconds));
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-danger"
+                        onClick={() =>
+                          addCorrection(trial.id, {
+                            timestampSeconds: event.startSeconds,
+                            kind: "event-remove",
+                            previousValue: event,
+                            correctedValue: { id: event.id },
+                          })
+                        }
+                      >
+                        Reject
+                      </button>
+                    </span>
+                  ) : null}
+                  {editEventId === event.id ? (
+                    <div className="row" style={{ marginTop: "0.35rem" }}>
+                      <label>
+                        Hole
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={editHole}
+                          onChange={(change) => setEditHole(Number(change.target.value))}
+                        />
+                      </label>
+                      <label>
+                        Start (s)
+                        <input value={editStart} onChange={(change) => setEditStart(change.target.value)} />
+                      </label>
+                      <label>
+                        End (s)
+                        <input value={editEnd} onChange={(change) => setEditEnd(change.target.value)} />
+                      </label>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => {
+                          const startSeconds = Number(editStart);
+                          const endSeconds = Number(editEnd);
+                          if (!Number.isFinite(startSeconds) || !Number.isFinite(endSeconds)) return;
+                          const holeIndex = Math.max(0, Math.min(19, editHole - 1));
+                          const targetHole = trial.arena?.targetHoleIndex ?? 0;
+                          const edited: BehavioralEvent = {
+                            ...event,
+                            holeIndex,
+                            startSeconds,
+                            endSeconds,
+                            durationSeconds: Math.max(0, endSeconds - startSeconds),
+                            type: investigationTypeForHole(holeIndex, targetHole),
+                            source: event.source === "automatic" ? "automatic-confirmed" : "manual",
+                            evidence: [...event.evidence, "manually edited investigation"],
+                          };
+                          addCorrection(trial.id, {
+                            timestampSeconds: startSeconds,
+                            kind: "event-edit",
+                            previousValue: event,
+                            correctedValue: edited,
+                          });
+                          setEditEventId(null);
+                        }}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() =>
-                addCorrection(trial.id, {
-                  timestampSeconds: sample?.timestampSeconds ?? 0,
-                  kind: "event-add",
-                  correctedValue: {
-                    id: `manual_escape_${Date.now()}`,
-                    type: "escape-entry",
-                    holeIndex: trial.arena?.targetHoleIndex,
-                    startSeconds: sample?.timestampSeconds ?? 0,
-                    confidence: 1,
-                    evidence: ["manually marked escape entry"],
-                    source: "manual",
-                  },
-                })
-              }
-            >
-              Mark escape entry here
-            </button>
+            <div className="row">
+              <label>
+                Hole
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={addHole}
+                  onChange={(change) => setAddHole(Number(change.target.value))}
+                />
+              </label>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  const startSeconds = reviewTimestamp();
+                  const holeIndex = Math.max(0, Math.min(19, addHole - 1));
+                  const targetHole = trial.arena?.targetHoleIndex ?? 0;
+                  addCorrection(trial.id, {
+                    timestampSeconds: startSeconds,
+                    kind: "event-add",
+                    correctedValue: {
+                      id: createId("evt"),
+                      type: investigationTypeForHole(holeIndex, targetHole),
+                      holeIndex,
+                      startSeconds,
+                      endSeconds: startSeconds,
+                      durationSeconds: 0,
+                      confidence: 1,
+                      evidence: ["manually marked investigation"],
+                      source: "manual",
+                    },
+                  });
+                }}
+              >
+                Add investigation here
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() =>
+                  addCorrection(trial.id, {
+                    timestampSeconds: reviewTimestamp(),
+                    kind: "event-add",
+                    correctedValue: {
+                      id: createId("esc"),
+                      type: "escape-entry",
+                      holeIndex: trial.arena?.targetHoleIndex,
+                      startSeconds: reviewTimestamp(),
+                      confidence: 1,
+                      evidence: ["manually marked escape entry"],
+                      source: "manual",
+                    },
+                  })
+                }
+              >
+                Mark escape entry here
+              </button>
+            </div>
           </div>
         </div>
         <QualityTimeline
           samples={samples}
           duration={trial.source.durationSeconds}
-          onJump={(time) => seekTo(nearestSampleIndex(samples, time))}
+          onJump={(time) => seekToTime(time)}
         />
         <div className="row" style={{ marginTop: "0.8rem" }}>
           <button type="button" className="btn-secondary" onClick={() => markReviewed(trial.id, "reviewed")}>

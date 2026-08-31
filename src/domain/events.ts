@@ -136,8 +136,7 @@ export function detectHoleInvestigations(
 
   const events: BehavioralEvent[] = visits.map((visit) => ({
     id: createId("evt"),
-    type:
-      visit.holeIndex === arena.targetHoleIndex ? "target-investigation" : "hole-investigation",
+    type: investigationTypeForHole(visit.holeIndex, arena.targetHoleIndex),
     holeIndex: visit.holeIndex,
     startSeconds: visit.startSeconds,
     endSeconds: visit.endSeconds,
@@ -161,6 +160,25 @@ export function detectHoleInvestigations(
   return events;
 }
 
+export function investigationTypeForHole(
+  holeIndex: number,
+  targetHoleIndex: number,
+): BehavioralEvent["type"] {
+  return holeIndex === targetHoleIndex ? "target-investigation" : "hole-investigation";
+}
+
+function mostRecentPriorTargetVisit(
+  visits: BehavioralEvent[],
+  targetHoleIndex: number,
+  disappearanceStart: number,
+): BehavioralEvent | undefined {
+  return visits
+    .filter((event) => event.holeIndex === targetHoleIndex)
+    .filter((event) => (event.endSeconds ?? event.startSeconds) <= disappearanceStart)
+    .sort((a, b) => (a.endSeconds ?? a.startSeconds) - (b.endSeconds ?? b.startSeconds))
+    .at(-1);
+}
+
 export function inferEscapeEntry(
   samples: TrackingSample[],
   arena: ArenaGeometry,
@@ -173,10 +191,6 @@ export function inferEscapeEntry(
   const proximityPx =
     investigationRadiusPx(arena, parameters.fallbackInvestigationRadiusPx, parameters.escapeProximityCm) ??
     parameters.fallbackInvestigationRadiusPx;
-
-  const recentTargetVisit = [...visits]
-    .reverse()
-    .find((event) => event.holeIndex === arena.targetHoleIndex);
 
   for (let i = 0; i < samples.length; i += 1) {
     const sample = samples[i];
@@ -216,9 +230,13 @@ export function inferEscapeEntry(
       distance(before.body, target) <=
         distance(samples[Math.max(0, start - 3)].body as Point, target) + 4;
 
-    const visitedTargetRecently =
-      recentTargetVisit !== undefined &&
-      samples[start].timestampSeconds - (recentTargetVisit.endSeconds ?? recentTargetVisit.startSeconds) <= 2.5;
+    const disappearanceStart = samples[start].timestampSeconds;
+    const priorTargetVisit = mostRecentPriorTargetVisit(visits, arena.targetHoleIndex, disappearanceStart);
+    const visitEnd = priorTargetVisit
+      ? (priorTargetVisit.endSeconds ?? priorTargetVisit.startSeconds)
+      : undefined;
+    const sinceVisit = visitEnd === undefined ? undefined : disappearanceStart - visitEnd;
+    const visitedTargetRecently = sinceVisit !== undefined && sinceVisit >= 0 && sinceVisit <= 2.5;
 
     if (!nearTarget) {
       i = end;

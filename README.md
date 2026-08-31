@@ -93,9 +93,9 @@ These are the defaults. All of them are visible and editable in **Method / Analy
 | **Primary errors** | Non-target investigations before the first target investigation. |
 | **Total errors** | Non-target investigations up to escape or trial end. |
 | **Path length** | Sum of effective body steps that do not cross a failed/hidden gap, converted with platform diameter. Unavailable in cm until diameter is entered. |
-| **Speed** | Mean (and median) of step distance / real timestamp delta. Not `pixels × assumed fps`. |
+| **Speed** | **Mean** is time-weighted: valid path length / valid tracked duration. **Median** is the median of instantaneous segment speeds (step distance / real timestamp delta). Not `pixels × assumed fps`. |
 | **Target quadrant** | 90° sector centered on the target-hole direction. Reported in seconds and as a percent of valid tracked time. |
-| **Strategy** | Transparent rules: spatial (few primary errors, efficient path), serial (adjacent hole transitions + perimeter occupancy), otherwise random. Hole 20 → 1 is adjacent. The reviewer can override; both labels are exported. |
+| **Strategy** | Transparent rules: spatial (few primary errors, efficient path), serial (adjacent hole transitions + perimeter occupancy), otherwise random. Hole 20 → 1 is adjacent. Reasoning reports the actual chronological transition counts, including revisits. The reviewer can override; both labels are exported. |
 
 ## Human corrections
 

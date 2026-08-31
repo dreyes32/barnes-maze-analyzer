@@ -79,6 +79,30 @@ describe("strategy", () => {
     expect(result.automatic).toBe("random");
   });
 
+  it("reports chronological transition counts when holes are revisited", () => {
+    const events = [0, 1, 0, 1, 0].map((hole, index) => visit(hole + 1, index + 1));
+    const samples: TrackingSample[] = events.map((event) => ({
+      timestampSeconds: event.startSeconds,
+      body: arena.holeCentersPx[event.holeIndex ?? 0],
+      confidence: 1,
+      status: "tracked" as const,
+      source: "automatic" as const,
+    }));
+    const result = computeStrategy({
+      samples,
+      events,
+      arena,
+      metrics: { primaryErrors: 4, primaryLatencySeconds: 5, unavailableReasons: [] },
+      parameters: DEFAULT_PARAMETERS.strategy,
+    });
+    expect(result.features.uniqueHolesInvestigated).toBe(2);
+    expect(result.features.transitionCount).toBe(4);
+    expect(result.features.adjacentTransitionCount).toBe(4);
+    expect(result.features.adjacencyRatio).toBe(1);
+    expect(result.reasoning.some((line) => line.startsWith("4 of 4 consecutive hole transitions"))).toBe(true);
+    expect(result.reasoning.some((line) => line.startsWith("1 of 1"))).toBe(false);
+  });
+
   it("preserves a manual override", () => {
     const samples: TrackingSample[] = [
       { timestampSeconds: 0, body: { x: 0, y: 0 }, confidence: 1, status: "tracked", source: "automatic" },

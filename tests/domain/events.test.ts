@@ -95,6 +95,32 @@ describe("events", () => {
     expect(escape && escape.confidence < 0.9).toBe(true);
   });
 
+  it("does not use a later target investigation as evidence for an earlier disappearance", () => {
+    const target = arena.holeCentersPx[0];
+    const samples: TrackingSample[] = [
+      { timestampSeconds: 0, body: target, confidence: 0.8, status: "tracked", source: "automatic" },
+      { timestampSeconds: 0.15, body: { x: target.x - 2, y: target.y }, confidence: 0.8, status: "tracked", source: "automatic" },
+      { timestampSeconds: 0.3, status: "failed", source: "automatic", confidence: 0 },
+      { timestampSeconds: 1.4, status: "failed", source: "automatic", confidence: 0 },
+    ];
+    const futureVisit = {
+      id: "later-target",
+      type: "target-investigation" as const,
+      holeIndex: 0,
+      startSeconds: 8,
+      endSeconds: 8.4,
+      confidence: 0.8,
+      evidence: [],
+      source: "automatic" as const,
+    };
+    const withoutFuture = inferEscapeEntry(samples, arena, DEFAULT_PARAMETERS.events, []);
+    const withFuture = inferEscapeEntry(samples, arena, DEFAULT_PARAMETERS.events, [futureVisit]);
+    expect(withFuture?.type).toBe(withoutFuture?.type);
+    expect(withFuture?.confidence).toBe(withoutFuture?.confidence);
+    expect(withFuture?.confidence).toBeLessThan(0.55);
+    expect(withFuture?.evidence.join(" ")).not.toMatch(/shortly before/);
+  });
+
   it("keeps a manual event override", () => {
     const samples = stay(1, 0, 6);
     const events = detectEvents(samples, arena, DEFAULT_PARAMETERS, [

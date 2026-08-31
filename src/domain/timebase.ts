@@ -82,6 +82,37 @@ export function elapsedSeconds(previous: number, next: number): number {
   return Math.max(0, next - previous);
 }
 
+/** Nominal duration of one source frame from the parsed timebase. Never assumes 30 fps. */
+export function nominalFrameDurationSeconds(timebase?: Timebase | null): number | undefined {
+  if (!timebase) return undefined;
+  if (timebase.frameDurationTimescaleUnits && timebase.timescale > 0) {
+    return timebase.frameDurationTimescaleUnits / timebase.timescale;
+  }
+  if (Number.isFinite(timebase.fps) && timebase.fps > 0) {
+    return 1 / timebase.fps;
+  }
+  return undefined;
+}
+
+/**
+ * Source-frame step used by manual review. Prefers the MP4 timebase; otherwise
+ * uses recorded fps or duration/frame-count. Does not invent 30 fps.
+ */
+export function sourceFrameDurationSeconds(source: {
+  timebase?: Timebase;
+  fps?: number;
+  durationSeconds?: number;
+  frameCount?: number;
+}): number | undefined {
+  const fromTimebase = nominalFrameDurationSeconds(source.timebase);
+  if (fromTimebase) return fromTimebase;
+  if (source.fps && source.fps > 0) return 1 / source.fps;
+  if (source.durationSeconds && source.frameCount && source.frameCount > 1) {
+    return source.durationSeconds / (source.frameCount - 1);
+  }
+  return undefined;
+}
+
 /**
  * Mean speed from irregular samples. Uses real timestamp deltas.
  * Pairs with a missing previous or next position are skipped.

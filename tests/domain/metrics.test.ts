@@ -76,6 +76,18 @@ describe("metrics", () => {
     expect(metrics.meanSpeedCmPerSec).toBeCloseTo(50);
   });
 
+  it("uses time-weighted mean speed, not the unweighted mean of segment speeds", () => {
+    const samples: TrackingSample[] = [
+      { timestampSeconds: 0, body: { x: 0, y: 0 }, confidence: 1, status: "tracked", source: "automatic" },
+      { timestampSeconds: 1, body: { x: 100, y: 0 }, confidence: 1, status: "tracked", source: "automatic" },
+      { timestampSeconds: 4, body: { x: 130, y: 0 }, confidence: 1, status: "tracked", source: "automatic" },
+    ];
+    const metrics = computeMetrics({ samples, events: [], arena });
+    expect(metrics.pathLengthCm).toBeCloseTo(65);
+    expect(metrics.meanSpeedCmPerSec).toBeCloseTo(16.25);
+    expect(metrics.medianSpeedCmPerSec).toBeCloseTo(27.5);
+  });
+
   it("does not connect a failed gap as path length", () => {
     const samples: TrackingSample[] = [
       { timestampSeconds: 0, body: { x: 0, y: 0 }, confidence: 1, status: "tracked", source: "automatic" },

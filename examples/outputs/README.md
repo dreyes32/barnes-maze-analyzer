@@ -15,6 +15,7 @@ Important about these numbers:
 - **`test51.mp4` uses a nominal frame rate of `15000/1001 ≈ 14.985 fps`.** The analyzer does not assume integer FPS. Browser analysis uses source media timestamps. Duration/frame-count averages near 15.005 are a container artifact, not the advertised frame rate.
 - **Platform diameter is 91 cm** in this export because a centimeter scale is required for path length. That value was entered for the sample run; the app does not assume it.
 - **Coverage is not a quality grade.** High coverage can include low-confidence observations. Review the QC warnings in the JSON and the quality timeline in the app.
+- **Mean speed is time-weighted** (valid path length / valid tracked duration). These files were regenerated after that definition change; event counts and target holes are unchanged.
 
 Regenerate (requires local `.local-data/` videos and extracted frames):
 

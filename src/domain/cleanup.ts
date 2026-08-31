@@ -200,8 +200,42 @@ export function applyManualCorrections(
     return best;
   };
 
+  const MATCH_SECONDS = 1e-4;
+  const upsertIndex = (timestamp: number): number => {
+    if (result.length === 0) {
+      result.push({
+        timestampSeconds: timestamp,
+        confidence: 0,
+        status: "failed",
+        source: "manual",
+      });
+      return 0;
+    }
+    const nearest = nearestIndex(timestamp);
+    if (Math.abs(result[nearest].timestampSeconds - timestamp) <= MATCH_SECONDS) {
+      return nearest;
+    }
+    const insertAt = result.findIndex((sample) => sample.timestampSeconds > timestamp);
+    const at = insertAt === -1 ? result.length : insertAt;
+    result.splice(at, 0, {
+      timestampSeconds: timestamp,
+      confidence: 0,
+      status: "failed",
+      source: "manual",
+    });
+    return at;
+  };
+
   for (const correction of corrections) {
-    const index = nearestIndex(correction.timestampSeconds);
+    if (
+      correction.kind !== "body-position" &&
+      correction.kind !== "head-position" &&
+      correction.kind !== "tracking-failure" &&
+      correction.kind !== "hidden-in-hole"
+    ) {
+      continue;
+    }
+    const index = upsertIndex(correction.timestampSeconds);
     const current = result[index];
     if (correction.kind === "body-position") {
       const point = correction.correctedValue as Point;
