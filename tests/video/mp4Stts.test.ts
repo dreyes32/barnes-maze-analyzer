@@ -44,4 +44,17 @@ describe("mp4 stts dominant duration", () => {
     expect(parsed.timebase.fps).toBeCloseTo(15000 / 1001);
     expect(parsed.timebase.fps).not.toBe(15);
   });
+
+  it("still reports 15000/1001 when edit-list leftovers pull the average near 15.005", () => {
+    const mdhd = box("mdhd", concat(new Uint8Array(4), u32(0), u32(0), u32(15000), u32(15000)));
+    const stts = box(
+      "stts",
+      concat(u32(0), u32(4), u32(603), u32(1001), u32(20), u32(1), u32(20), u32(2001), u32(98), u32(1001)),
+    );
+    const moov = box("moov", box("trak", box("mdia", concat(mdhd, box("minf", box("stbl", stts))))));
+    const parsed = parseMp4Timebase(moov.buffer);
+    expect(parsed.timebase.fps).toBeCloseTo(15000 / 1001);
+    expect(parsed.timebase.fps).not.toBeCloseTo(15.005, 3);
+    expect(parsed.timebase.isVariableFrameRate).toBe(true);
+  });
 });

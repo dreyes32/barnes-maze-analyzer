@@ -1,5 +1,9 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+
+function workflowStep(page: Page, name: string) {
+  return page.getByRole("navigation", { name: "Analysis workflow" }).getByRole("button", { name: new RegExp(name) });
+}
 
 test("demo analysis, correction, reload, parameter change, and CSV export", async ({ page }) => {
   const downloads: string[] = [];
@@ -8,27 +12,31 @@ test("demo analysis, correction, reload, parameter change, and CSV export", asyn
   });
 
   await page.goto("./");
-  await expect(page.getByRole("heading", { name: "Barnes Maze Analyzer" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Barnes Maze Analyzer", level: 1 })).toBeVisible();
   await page.getByRole("button", { name: "Load demo analysis" }).click();
-  await expect(page.getByText("Example analysis")).toBeVisible();
-  await expect(page.getByText("Primary latency")).toBeVisible();
+  await expect(page.getByText("Example analysis", { exact: true })).toBeVisible();
+  await expect(page.getByText("Primary latency", { exact: true })).toBeVisible();
+  const pathBefore = await page.locator(".metric").filter({ hasText: "Path length" }).locator("dd").innerText();
 
-  await page.getByRole("button", { name: "Review" }).click();
-  await expect(page.getByRole("heading", { name: "Review" })).toBeVisible();
+  await workflowStep(page, "Review").click();
+  await expect(page.getByRole("heading", { name: "Review", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Correct body" }).click();
   await page.getByRole("button", { name: "Mark hidden in hole" }).click();
-  await expect(page.getByText("Manual correction", { exact: false })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Manual correction at/)).toBeVisible({ timeout: 10_000 });
+
+  await workflowStep(page, "Results").click();
+  const pathAfter = await page.locator(".metric").filter({ hasText: "Path length" }).locator("dd").innerText();
+  expect(pathAfter, "a tracking correction must recompute metrics").not.toEqual(pathBefore);
 
   await page.reload();
-  await page.getByRole("button", { name: "Review" }).click();
-  await expect(page.getByText("hidden", { exact: false })).toBeVisible();
+  await workflowStep(page, "Review").click();
+  await expect(page.getByText(/Manual correction at/)).toBeVisible();
+  await expect(page.getByText(/t = 0\.000 s · hidden · manual/)).toBeVisible();
 
-  await page.getByRole("button", { name: "Results" }).click();
-  const before = await page.getByText(/Changing|detected visits|Primary errors|Strategy/).first().textContent();
+  await workflowStep(page, "Results").click();
   await page.getByLabel("Minimum investigation (s)").fill("0.4");
   await page.getByLabel("Minimum investigation (s)").blur();
   await expect(page.getByText(/minimum investigation duration/i)).toBeVisible();
-  expect(before).toBeTruthy();
 
   await page.getByRole("button", { name: "Download CSV" }).click();
   await expect.poll(() => downloads.some((name) => name.endsWith(".csv"))).toBe(true);
@@ -42,8 +50,8 @@ test("keyboard navigation and 200% zoom remain usable", async ({ page }) => {
   });
   await page.getByRole("button", { name: "Load demo analysis" }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByText("Example analysis")).toBeVisible();
-  await page.getByRole("button", { name: "Videos" }).press("Enter");
+  await expect(page.getByText("Example analysis", { exact: true })).toBeVisible();
+  await workflowStep(page, "Videos").press("Enter");
   await expect(page.getByRole("heading", { name: "Videos" })).toBeVisible();
 });
 

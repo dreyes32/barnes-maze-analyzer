@@ -33,7 +33,7 @@ A helper script downsampled frames to 0.5 and also built arena geometry from tho
 
 ## 2026-08-31 — OpenCV fps is not the file timebase
 
-OpenCV `CAP_PROP_FPS` reported `15.005` for `test51.mp4`. The MP4 `stts`/`mdhd` timebase is `15000/1001 ≈ 14.985`. Using OpenCV fps for scientific timestamps would have been a quieter version of the integer-15 bug. The app parser and tests use the box timebase.
+OpenCV `CAP_PROP_FPS` reported `15.005` for `test51.mp4`. That is a derived container average, not the frame rate. The official Salk data note and the MP4 boxes say `15000/1001 ≈ 14.985`. `stts` is mostly duration `1001` at timescale `15000`, with leftover 1/2001 edit samples that pull `frameCount/duration` toward 15.005. Using OpenCV fps or that average for scientific timestamps would have been a quieter version of the integer-15 bug. The app reports the modal sample duration and uses media timestamps in the browser.
 
 ## 2026-08-31 — Demo vs live analysis
 

@@ -10,7 +10,7 @@ This is intentional:
 
 - Facility users will not install Python, conda, or Node.
 - Barnes maze videos are IACUC-covered research recordings and should stay on the user's machine.
-- A static host (GitHub Pages, Cloudflare Pages, or equivalent) has negligible cost and no per-analysis API charge.
+- A static host (Vercel, or equivalent) has negligible cost and no per-analysis API charge.
 - There is no login because this is a single-user analysis tool (Task 1 exemption).
 
 Imported research videos are decoded and analyzed in the browser. They are not uploaded to this application or to a third-party vision service.

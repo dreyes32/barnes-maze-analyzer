@@ -114,10 +114,13 @@ export function parseMp4Timebase(buffer: ArrayBuffer): {
     frameCount = total || undefined;
     const ranked = [...durationCounts.entries()].sort((a, b) => b[1] - a[1]);
     const dominant = ranked[0];
-    isVariableFrameRate = ranked.length > 1 && (!dominant || dominant[1] / Math.max(total, 1) < 0.95);
-    if (dominant && dominant[1] / Math.max(total, 1) >= 0.95) {
+    // Report the modal sample duration as the nominal fps even when a few
+    // composition/edit samples exist. Those leftovers can make
+    // frameCount/duration look like 15.005 when the file is 15000/1001.
+    if (dominant) {
       frameDurationTimescaleUnits = dominant[0];
     }
+    isVariableFrameRate = !dominant || dominant[1] / Math.max(total, 1) < 0.95;
   }
 
   let width: number | undefined;

@@ -15,6 +15,9 @@ import { parseMp4Timebase } from "../src/video/mp4Metadata";
 const root = join(process.cwd(), ".local-data", "frames-raw");
 const videoDir = join(process.cwd(), ".local-data");
 const outDir = join(process.cwd(), "examples", "outputs");
+const reviewedTargets = JSON.parse(
+  readFileSync(join(process.cwd(), "scripts", "reviewed-targets.json"), "utf8"),
+) as { targets: Record<string, number> };
 
 function loadGray(path: string, width: number, height: number): GrayImage {
   const data = new Uint8ClampedArray(readFileSync(path));
@@ -24,7 +27,7 @@ function loadGray(path: string, width: number, height: number): GrayImage {
   return { width, height, data };
 }
 
-function arenaFromFrame(frame: GrayImage) {
+function arenaFromFrame(frame: GrayImage, targetHoleIndex: number) {
   const circle = estimateBrightCircle(frame);
   if (!circle) throw new Error("Could not estimate the platform circle.");
   const firstHole = darkestLocalCenter(frame, { x: circle.x + circle.radius * 0.82, y: circle.y }, 22, 7);
@@ -39,7 +42,7 @@ function arenaFromFrame(frame: GrayImage) {
     platformCenterPx: { x: circle.x, y: circle.y },
     platformEdgePx: { x: circle.x + circle.radius, y: circle.y },
     firstHolePx: holes[0],
-    targetHoleIndex: 0,
+    targetHoleIndex,
   });
   return {
     ...arena,
@@ -91,9 +94,13 @@ function analyzeFolder(name: string): TrialRecord {
       pick(Math.round((index * (files.length - 1)) / Math.max(backgroundCount - 1, 1))),
     ),
   );
-  const arena = arenaFromFrame(pickFull(0));
+  const target1 = reviewedTargets.targets[name];
+  if (target1 === undefined) {
+    throw new Error(`No reviewed target hole for ${name}. Inspect the video and add it to scripts/reviewed-targets.json.`);
+  }
+  const arena = arenaFromFrame(pickFull(0), target1 - 1);
   console.log(
-    `  arena center=${arena.platformCenterPx.x.toFixed(1)},${arena.platformCenterPx.y.toFixed(1)} r=${arena.platformRadiusPx.toFixed(1)}`,
+    `  arena center=${arena.platformCenterPx.x.toFixed(1)},${arena.platformCenterPx.y.toFixed(1)} r=${arena.platformRadiusPx.toFixed(1)} target=hole ${target1}`,
   );
   let memory: TrackerMemory = {};
   const rawSamples: TrackingSample[] = files.map((file, index) => {

@@ -2,8 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 
-// Relative base so GitHub Pages (or any subdirectory host) can serve the app
-// without a required backend or root-path assumption.
+// Relative base so Vercel, a subdirectory host, or a local file:// preview
+// can serve the app without a required backend or root-path assumption.
 export default defineConfig({
   base: "./",
   plugins: [react()],

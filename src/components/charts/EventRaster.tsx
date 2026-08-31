@@ -16,7 +16,7 @@ export function EventRaster({
       <figcaption>
         <strong>Hole-visit timeline</strong>
       </figcaption>
-      <svg viewBox="0 0 640 220" width="100%" role="img" aria-label="Hole visit timeline">
+      <svg viewBox="0 0 640 220" width="100%" role="group" aria-label="Hole visit timeline">
         {Array.from({ length: 20 }, (_, hole) => (
           <g key={hole}>
             <text x={4} y={12 + hole * 10} fontSize="8">
@@ -45,7 +45,10 @@ export function EventRaster({
                 tabIndex={0}
                 onClick={() => onSelect(event)}
                 onKeyDown={(keyboard) => {
-                  if (keyboard.key === "Enter") onSelect(event);
+                  if (keyboard.key === "Enter" || keyboard.key === " ") {
+                    keyboard.preventDefault();
+                    onSelect(event);
+                  }
                 }}
               >
                 <title>

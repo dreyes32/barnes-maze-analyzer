@@ -1,0 +1,13 @@
+{
+  "comment": "Target holes chosen by inspecting the recordings (animal location at trial end). 1-based hole numbers matching the analyzer overlay. Not inferred by the tracker.",
+  "targets": {
+    "test50": 6,
+    "test51": 20,
+    "test53": 3
+  },
+  "notes": {
+    "test50": "At 175–184 s the mouse remains at the 6 o'clock hole (overlay hole 6).",
+    "test51": "At 47–49 s the mouse is at the 2 o'clock hole (overlay hole 20).",
+    "test53": "From ~25 s through trial end the mouse is at the 4 o'clock hole (overlay hole 3)."
+  }
+}

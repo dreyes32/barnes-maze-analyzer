@@ -48,7 +48,7 @@ export function App() {
     <AppShell>
       {trials.length === 0 ? (
         <section className="card">
-          <h2>Barnes Maze Analyzer</h2>
+          <h2>Start here</h2>
           <p>
             Turn Barnes maze videos into latency, errors, path measures, and a transparent search-strategy
             classification — in the browser, without uploading recordings.

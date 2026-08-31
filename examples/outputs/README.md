@@ -8,7 +8,11 @@ A per-point `tracking_points.csv` is not committed here: the portable JSON alrea
 
 Important about these numbers:
 
-- **Target hole is not inferred.** Offline regeneration used assisted hole 1 as a placeholder so the pipeline can run unattended. A scientist must select the real target in the Arena step. Primary latency is missing (`NA` / empty) when that placeholder hole was never investigated.
+- **Target holes were selected manually during arena configuration, as intended by the workflow.** The software does not attempt to infer experimental target identity. Inspected selections (1-based overlay numbers, stored in `scripts/reviewed-targets.json`):
+  - `test50` — hole 6 (mouse remains at the 6 o'clock hole through trial end)
+  - `test51` — hole 20 (mouse is at the 2 o'clock hole at trial end)
+  - `test53` — hole 3 (mouse is at the 4 o'clock hole from ~25 s through trial end)
+- **`test51.mp4` uses a nominal frame rate of `15000/1001 ≈ 14.985 fps`.** The analyzer does not assume integer FPS. Browser analysis uses source media timestamps. Duration/frame-count averages near 15.005 are a container artifact, not the advertised frame rate.
 - **Platform diameter is 91 cm** in this export because a centimeter scale is required for path length. That value was entered for the sample run; the app does not assume it.
 - **Coverage is not a quality grade.** High coverage can include low-confidence observations. Review the QC warnings in the JSON and the quality timeline in the app.
 
@@ -19,4 +23,3 @@ npx vite-node scripts/analyze-extracted-frames.ts
 ```
 
 Official source videos: https://github.com/salk-airc/rse-takehome-2026/tree/main/data/barnes-maze
-
