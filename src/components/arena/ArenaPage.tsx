@@ -1,0 +1,442 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  copyArena,
+  createAssistedArena,
+  distance,
+  rotateHoles,
+  scaleHoleRing,
+  transformArena,
+} from "../../domain/geometry";
+import { darkestLocalCenter, estimateBrightCircle, rgbaToGray } from "../../domain/image";
+import type { ArenaGeometry, Point } from "../../domain/types";
+import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
+import { getVideoUrl } from "../../state/videoRegistry";
+import { Banner, Field } from "../ui";
+
+type SetupStep = "platform-center" | "platform-edge" | "first-hole" | "adjust";
+
+function drawArena(
+  ctx: CanvasRenderingContext2D,
+  arena: Partial<ArenaGeometry>,
+  video: HTMLVideoElement,
+) {
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
+  ctx.clearRect(0, 0, width, height);
+  const sx = width / video.videoWidth;
+  const sy = height / video.videoHeight;
+  ctx.lineWidth = 2;
+  if (arena.platformCenterPx && arena.platformRadiusPx) {
+    ctx.strokeStyle = "#1f4d5c";
+    ctx.beginPath();
+    ctx.arc(arena.platformCenterPx.x * sx, arena.platformCenterPx.y * sy, arena.platformRadiusPx * sx, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#1f4d5c";
+    ctx.beginPath();
+    ctx.arc(arena.platformCenterPx.x * sx, arena.platformCenterPx.y * sy, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  arena.holeCentersPx?.forEach((hole, index) => {
+    const isTarget = index === arena.targetHoleIndex;
+    ctx.strokeStyle = isTarget ? "#6b2d2d" : "#3d2a78";
+    ctx.setLineDash(isTarget ? [] : [4, 3]);
+    ctx.beginPath();
+    ctx.arc(hole.x * sx, hole.y * sy, (arena.holeRadiusPx ?? 8) * sx, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#111";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(String(index + 1), hole.x * sx + 6, hole.y * sy - 6);
+    if (isTarget) {
+      ctx.fillText("TARGET", hole.x * sx + 6, hole.y * sy + 14);
+    }
+  });
+}
+
+export function ArenaPage() {
+  const session = useSessionStore((state) => state.session);
+  const trial = currentTrialSelector(session);
+  const setArena = useSessionStore((state) => state.setArena);
+  const reuseArena = useSessionStore((state) => state.reuseArena);
+  const setStage = useSessionStore((state) => state.setStage);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [step, setStep] = useState<SetupStep>(trial?.arena ? "adjust" : "platform-center");
+  const [draftCenter, setDraftCenter] = useState<Point | undefined>(trial?.arena?.platformCenterPx);
+  const [draftEdge, setDraftEdge] = useState<Point | undefined>();
+  const [selectedHole, setSelectedHole] = useState(trial?.arena?.targetHoleIndex ?? 0);
+  const [nudge, setNudge] = useState(2);
+  const url = trial ? getVideoUrl(trial.id) : undefined;
+  const donor = session.trials.find((item) => item.id !== trial?.id && item.arena);
+
+  const arena = trial?.arena;
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+    const sync = () => {
+      canvas.width = video.clientWidth;
+      canvas.height = video.clientHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const current: Partial<ArenaGeometry> = arena ?? {
+        platformCenterPx: draftCenter,
+        platformRadiusPx: draftCenter && draftEdge ? distance(draftCenter, draftEdge) : undefined,
+      };
+      drawArena(ctx, current, video);
+    };
+    video.addEventListener("loadeddata", sync);
+    window.addEventListener("resize", sync);
+    sync();
+    return () => {
+      video.removeEventListener("loadeddata", sync);
+      window.removeEventListener("resize", sync);
+    };
+  }, [arena, draftCenter, draftEdge, url]);
+
+  const toVideoPoint = (event: React.MouseEvent<HTMLCanvasElement>): Point | null => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || !video.videoWidth) return null;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * video.videoWidth,
+      y: ((event.clientY - rect.top) / rect.height) * video.videoHeight,
+    };
+  };
+
+  const onCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const point = toVideoPoint(event);
+    if (!point || !trial) return;
+    if (step === "platform-center") {
+      setDraftCenter(point);
+      setStep("platform-edge");
+      return;
+    }
+    if (step === "platform-edge" && draftCenter) {
+      setDraftEdge(point);
+      setStep("first-hole");
+      return;
+    }
+    if (step === "first-hole" && draftCenter && draftEdge) {
+      const next = createAssistedArena({
+        platformCenterPx: draftCenter,
+        platformEdgePx: draftEdge,
+        firstHolePx: point,
+        targetHoleIndex: 0,
+      });
+      setArena(trial.id, next);
+      setStep("adjust");
+      return;
+    }
+    if (step === "adjust" && arena) {
+      let nearest = 0;
+      let best = Number.POSITIVE_INFINITY;
+      arena.holeCentersPx.forEach((hole, index) => {
+        const d = distance(hole, point);
+        if (d < best) {
+          best = d;
+          nearest = index;
+        }
+      });
+      if (best < 28) setSelectedHole(nearest);
+    }
+  };
+
+  const moveSelected = (dx: number, dy: number) => {
+    if (!trial?.arena) return;
+    const holes = trial.arena.holeCentersPx.map((hole, index) =>
+      index === selectedHole ? { x: hole.x + dx, y: hole.y + dy } : hole,
+    );
+    const sources = trial.arena.holeSources?.map((source, index) => (index === selectedHole ? "manual" : source));
+    setArena(trial.id, { ...trial.arena, holeCentersPx: holes, holeSources: sources, geometrySource: "manual" });
+  };
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (step !== "adjust") return;
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        moveSelected(0, -nudge);
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        moveSelected(0, nudge);
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        moveSelected(-nudge, 0);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        moveSelected(nudge, 0);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const suggestPlatform = () => {
+    const video = videoRef.current;
+    if (!video || !trial) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const gray = rgbaToGray(image.data, canvas.width, canvas.height);
+    const circle = estimateBrightCircle(gray);
+    if (!circle) return;
+    setDraftCenter({ x: circle.x, y: circle.y });
+    setDraftEdge({ x: circle.x + circle.radius, y: circle.y });
+    setStep("first-hole");
+  };
+
+  const refineHoles = () => {
+    const video = videoRef.current;
+    if (!video || !trial?.arena) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const gray = rgbaToGray(image.data, canvas.width, canvas.height);
+    const holes = trial.arena.holeCentersPx.map((hole) => {
+      const refined = darkestLocalCenter(gray, hole, 10, trial.arena!.holeRadiusPx);
+      return { x: refined.x, y: refined.y };
+    });
+    setArena(trial.id, {
+      ...trial.arena,
+      holeCentersPx: holes,
+      holeSources: holes.map(() => "refined"),
+    });
+  };
+
+  const geometryNote = useMemo(() => {
+    if (!arena) return null;
+    if (arena.geometrySource === "reused" || arena.geometrySource === "registered") {
+      return `Geometry ${arena.geometrySource} from a previous trial. Adjust if the overlay is off.`;
+    }
+    return `Geometry source: ${arena.geometrySource}.`;
+  }, [arena]);
+
+  if (!trial) {
+    return <Banner kind="info">Import a video first.</Banner>;
+  }
+
+  return (
+    <div className="grid-2">
+      <section className="card">
+        <h2>Set arena</h2>
+        <p className="help">
+          {step === "platform-center" && "Click the platform center."}
+          {step === "platform-edge" && "Click a point on the platform edge."}
+          {step === "first-hole" && "Click the center of one clearly visible hole. The other 19 are generated at 18°."}
+          {step === "adjust" && "Drag is optional. Select a hole and nudge it with buttons or arrow keys."}
+        </p>
+        {url ? (
+          <div className="canvas-wrap">
+            <video ref={videoRef} src={url} muted playsInline />
+            <canvas
+              ref={canvasRef}
+              className="overlay-canvas"
+              onClick={onCanvasClick}
+              role="img"
+              aria-label="Arena overlay. Click to place platform or holes."
+            />
+          </div>
+        ) : (
+          <Banner kind="warn">
+            Relink {trial.source.fileName} to see the video. Saved geometry can still be edited from numbers.
+          </Banner>
+        )}
+        <div className="row" style={{ marginTop: "0.6rem" }}>
+          <button type="button" className="btn-secondary" onClick={suggestPlatform}>
+            Suggest platform
+          </button>
+          {arena ? (
+            <button type="button" className="btn-secondary" onClick={refineHoles}>
+              Refine holes locally
+            </button>
+          ) : null}
+        </div>
+      </section>
+      <section className="card">
+        <h3>Calibration</h3>
+        {geometryNote ? <p className="help">{geometryNote}</p> : null}
+        {donor && trial && !arena ? (
+          <Banner kind="info">
+            Reuse the arena from {donor.source.fileName}.
+            <div className="row">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  reuseArena(donor.id, trial.id, copyArena(donor.arena!, "reused"));
+                  setStep("adjust");
+                }}
+              >
+                Reuse this arena layout
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  const video = videoRef.current;
+                  if (!video || !donor.arena) return;
+                  const canvas = document.createElement("canvas");
+                  canvas.width = video.videoWidth;
+                  canvas.height = video.videoHeight;
+                  const ctx = canvas.getContext("2d");
+                  if (!ctx) return;
+                  ctx.drawImage(video, 0, 0);
+                  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                  const gray = rgbaToGray(image.data, canvas.width, canvas.height);
+                  const circle = estimateBrightCircle(gray);
+                  if (!circle) {
+                    reuseArena(donor.id, trial.id, copyArena(donor.arena, "reused"));
+                    setStep("adjust");
+                    return;
+                  }
+                  const scale = circle.radius / donor.arena.platformRadiusPx;
+                  const registered = transformArena(donor.arena, {
+                    translationX: circle.x - donor.arena.platformCenterPx.x,
+                    translationY: circle.y - donor.arena.platformCenterPx.y,
+                    scale,
+                    rotationRadians: 0,
+                  });
+                  reuseArena(donor.id, trial.id, { ...registered, geometrySource: "registered" });
+                  setStep("adjust");
+                }}
+              >
+                Align to this video
+              </button>
+            </div>
+          </Banner>
+        ) : null}
+
+        {arena ? (
+          <>
+            <Field label="Target hole" hint="Do not infer the target from disappearance. Choose it here.">
+              <select
+                value={arena.targetHoleIndex}
+                onChange={(event) =>
+                  setArena(trial.id, { ...arena, targetHoleIndex: Number(event.target.value) })
+                }
+              >
+                {arena.holeCentersPx.map((_, index) => (
+                  <option key={index} value={index}>
+                    Hole {index + 1}
+                    {index === arena.targetHoleIndex ? " (target)" : ""}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label="Platform diameter (cm)"
+              hint="Required for path length and speed in centimeters. Not assumed from the literature."
+            >
+              <input
+                type="number"
+                min={1}
+                step="0.1"
+                value={arena.platformDiameterCm ?? ""}
+                onChange={(event) =>
+                  setArena(trial.id, {
+                    ...arena,
+                    platformDiameterCm: event.target.value === "" ? undefined : Number(event.target.value),
+                  })
+                }
+              />
+            </Field>
+            <Field label="Hole radius (px)">
+              <input
+                type="number"
+                min={2}
+                value={arena.holeRadiusPx}
+                onChange={(event) => setArena(trial.id, { ...arena, holeRadiusPx: Number(event.target.value) })}
+              />
+            </Field>
+            <Field label="Platform radius (px)">
+              <input
+                type="number"
+                min={10}
+                value={Math.round(arena.platformRadiusPx)}
+                onChange={(event) => setArena(trial.id, { ...arena, platformRadiusPx: Number(event.target.value) })}
+              />
+            </Field>
+            <div className="row">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() =>
+                  setArena(trial.id, { ...arena, holeCentersPx: rotateHoles(arena, (2 * Math.PI) / 180) })
+                }
+              >
+                Rotate ring +1°
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() =>
+                  setArena(trial.id, { ...arena, holeCentersPx: rotateHoles(arena, -(2 * Math.PI) / 180) })
+                }
+              >
+                Rotate ring −1°
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setArena(trial.id, { ...arena, holeCentersPx: scaleHoleRing(arena, 1.01) })}
+              >
+                Scale ring +
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setArena(trial.id, { ...arena, holeCentersPx: scaleHoleRing(arena, 0.99) })}
+              >
+                Scale ring −
+              </button>
+            </div>
+            <h3>Selected hole {selectedHole + 1}</h3>
+            <Field label="Nudge step (px)">
+              <input type="number" value={nudge} min={1} onChange={(event) => setNudge(Number(event.target.value))} />
+            </Field>
+            <div className="row">
+              <button type="button" className="btn-secondary" onClick={() => moveSelected(0, -nudge)}>
+                Up
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => moveSelected(-nudge, 0)}>
+                Left
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => moveSelected(nudge, 0)}>
+                Right
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => moveSelected(0, nudge)}>
+                Down
+              </button>
+            </div>
+            <p className="help">
+              Arrow keys also nudge the selected hole. Hole sources:{" "}
+              {arena.holeSources?.filter((item) => item === "predicted").length ?? 0} predicted,{" "}
+              {arena.holeSources?.filter((item) => item === "refined").length ?? 0} refined,{" "}
+              {arena.holeSources?.filter((item) => item === "manual").length ?? 0} manual.
+            </p>
+            <button type="button" className="btn" onClick={() => setStage("track")}>
+              Continue to tracking
+            </button>
+          </>
+        ) : (
+          <p className="help">Place the platform and one hole, or reuse a previous layout.</p>
+        )}
+      </section>
+    </div>
+  );
+}
