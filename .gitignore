@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+*.local
+
+# Test / tooling
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.tools/
+.local-data/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sample videos must never be committed
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# Python cache if local helpers are used
+__pycache__/
+*.pyc
+.venv/
