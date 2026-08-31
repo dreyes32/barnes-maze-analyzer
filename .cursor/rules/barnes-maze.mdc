@@ -1,0 +1,12 @@
+---
+description: Barnes Maze Analyzer scientific and product rules
+alwaysApply: true
+---
+
+- Domain logic lives in `src/domain/`. Do not put scientific formulas in React components.
+- Never assume 30 fps. Prefer MP4 timebase and media timestamps. `test51` is not integer 15.
+- Never silently interpolate long gaps or treat disappearance as escape.
+- Do not commit sample MP4s.
+- Do not hard-code filenames `test50` / `test51` / `test53` in the tracker.
+- Corrections are append-only. Raw automatic samples stay intact.
+- Uncertain measurements stay empty/NA, not zero.

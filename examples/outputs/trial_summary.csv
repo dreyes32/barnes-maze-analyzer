@@ -1,0 +1,4 @@
+animal_id,cohort,day,trial,source_file,duration_s,primary_latency_s,total_latency_s,primary_errors,total_errors,path_length_cm,mean_speed_cm_s,target_quadrant_time_s,target_quadrant_percent,automatic_strategy,final_strategy,tracking_coverage_percent,manual_correction_count,review_status
+,,,,test50.mp4,185.033,124.33333333333333,,21,30,1253.7852830989489,6.980987099660074,12.133333333333326,6.755753526354859,random,random,97.29241877256317,0,needs-review
+,,,,test51.mp4,49.316,,,12,12,217.57802025036344,4.405959316029171,16.883533333333332,34.18918918918919,random,random,100,0,needs-review
+,,,,test53.mp4,30.200,,,3,3,105.52461561712477,4.198592133307352,17.933333333333334,71.3527851458886,random,random,83.44370860927152,0,needs-review
