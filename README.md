@@ -1,6 +1,6 @@
 # Live demo
 
-* **Live demo:** _add the Vercel production URL here after deploy_
+* **Live demo:** https://barnes-maze-analyzer.vercel.app
 * **2–3 minute demo video:** _add an unlisted YouTube / Loom / repo link here_
 
 # Barnes Maze Analyzer

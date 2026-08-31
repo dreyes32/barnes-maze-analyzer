@@ -1,0 +1,14 @@
+.tools
+.local-data
+node_modules
+.git
+dist
+playwright-report
+test-results
+coverage
+*.mp4
+*.mov
+.venv
+__pycache__
+agent-transcripts
+.cursor
