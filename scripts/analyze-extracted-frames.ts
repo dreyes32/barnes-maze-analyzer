@@ -6,6 +6,7 @@ import { trackFrame, type TrackerMemory } from "../src/domain/tracking";
 import { DEFAULT_PARAMETERS, cloneParameters } from "../src/domain/defaults";
 import { createId, nowIso } from "../src/domain/ids";
 import { recomputeTrial } from "../src/domain/pipeline";
+import { buildTrackingProvenance } from "../src/domain/trackingProvenance";
 import { SCHEMA_VERSION, type AnalysisSession, type TrackingSample, type TrialRecord } from "../src/domain/types";
 import { eventsCsv, trialSummaryCsv } from "../src/export/csv";
 import { sessionToPortableJson } from "../src/export/analysisJson";
@@ -110,7 +111,7 @@ function analyzeFolder(name: string): TrialRecord {
       arena,
       parameters: DEFAULT_PARAMETERS.tracking,
       timestampSeconds: manifest.timestamps[index] ?? index / 12,
-      frameIndex: index,
+      analysisSampleIndex: index,
       memory,
       scale,
     });
@@ -142,6 +143,8 @@ function analyzeFolder(name: string): TrialRecord {
       analysisSamplingHz: files.length / Math.max(manifest.timestamps.at(-1) ?? 1, 1),
       startedAt: nowIso(),
       finishedAt: nowIso(),
+      status: "ready",
+      provenance: buildTrackingProvenance(DEFAULT_PARAMETERS, arena),
     },
     corrections: [],
     events: [],

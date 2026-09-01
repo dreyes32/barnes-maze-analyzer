@@ -1,3 +1,4 @@
+import { isTrackingStale } from "../domain/trackingProvenance";
 import type { AnalysisSession } from "../domain/types";
 import { TRIAL_SUMMARY_COLUMNS, trialSummaryRow } from "./csv";
 
@@ -107,7 +108,20 @@ export async function sessionToWorkbookBlob(session: AnalysisSession): Promise<B
       parameters.addRow([section, rest.join(".") || section, String(value)]);
     }
   };
-  walk("", session.parameters);
+  const anyStale = session.trials.some((trial) => isTrackingStale(trial.tracking));
+  parameters.addRow(["provenance", "tracking_stale", anyStale ? "yes" : "no"]);
+  for (const trial of session.trials) {
+    if (trial.tracking?.provenance) {
+      walk(`tracking_used.${trial.source.fileName}`, trial.tracking.provenance);
+    }
+    if (isTrackingStale(trial.tracking)) {
+      walk(`tracking_pending.${trial.source.fileName}`, {
+        sampling: session.parameters.sampling,
+        tracking: session.parameters.tracking,
+      });
+    }
+  }
+  walk("current_settings", session.parameters);
 
   const qc = workbook.addWorksheet("QC");
   qc.addRow([
@@ -121,6 +135,8 @@ export async function sessionToWorkbookBlob(session: AnalysisSession): Promise<B
     "manual",
     "largest_missing_interval_s",
     "tracking_coverage_percent",
+    "automatic_tracking_coverage_percent",
+    "effective_trajectory_coverage_percent",
     "warnings",
   ]);
   applyHeader(qc.getRow(1));
@@ -135,7 +151,9 @@ export async function sessionToWorkbookBlob(session: AnalysisSession): Promise<B
       trial.qc?.interpolated ?? null,
       trial.qc?.manual ?? null,
       trial.qc?.largestMissingIntervalSeconds ?? null,
-      trial.qc?.trackingCoveragePercent ?? null,
+      trial.qc?.effectiveTrajectoryCoveragePercent ?? trial.qc?.trackingCoveragePercent ?? null,
+      trial.qc?.automaticTrackingCoveragePercent ?? null,
+      trial.qc?.effectiveTrajectoryCoveragePercent ?? trial.qc?.trackingCoveragePercent ?? null,
       trial.qc?.warnings.join(" | ") ?? null,
     ]);
   }

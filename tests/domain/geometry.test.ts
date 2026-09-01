@@ -3,6 +3,7 @@ import {
   createAssistedArena,
   holesAreAdjacent,
   isInTargetQuadrant,
+  nudgePlatformCenter,
   pixelsPerCm,
   pxToCm,
   wrapHoleIndex,
@@ -45,5 +46,12 @@ describe("geometry", () => {
 
   it("generates 20 holes from one click", () => {
     expect(arena.holeCentersPx).toHaveLength(20);
+  });
+
+  it("nudges the platform circle without moving holes", () => {
+    const next = nudgePlatformCenter(arena, 5, -3);
+    expect(next.platformCenterPx).toEqual({ x: 325, y: 237 });
+    expect(next.platformRadiusPx).toBe(arena.platformRadiusPx);
+    expect(next.holeCentersPx).toEqual(arena.holeCentersPx);
   });
 });

@@ -30,6 +30,10 @@ function loadHtmlVideo(file: File): Promise<{ width: number; height: number; dur
   });
 }
 
+/**
+ * Reads the source MP4 into memory to parse moov atoms. Acceptable for the
+ * supplied take-home clips; very large recordings would need chunked atom search.
+ */
 export async function probeVideoFile(file: File): Promise<VideoSourceMetadata> {
   if (!file.type.startsWith("video/") && !file.name.toLowerCase().endsWith(".mp4")) {
     throw new Error(`${file.name} is not a supported video file. Import an MP4 recording.`);

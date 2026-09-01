@@ -64,6 +64,7 @@ export class TrackerClient {
     width: number;
     height: number;
     timestampSeconds: number;
+    analysisSampleIndex?: number;
     frameIndex?: number;
   }): Promise<TrackingSample> {
     return new Promise((resolve, reject) => {

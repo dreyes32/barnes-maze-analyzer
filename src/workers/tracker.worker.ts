@@ -24,6 +24,7 @@ type FrameMessage = {
   width: number;
   height: number;
   timestampSeconds: number;
+  analysisSampleIndex?: number;
   frameIndex?: number;
 };
 
@@ -80,6 +81,7 @@ self.onmessage = (event: MessageEvent<Incoming>) => {
         arena,
         parameters,
         timestampSeconds: message.timestampSeconds,
+        analysisSampleIndex: message.analysisSampleIndex ?? message.frameIndex,
         frameIndex: message.frameIndex,
         memory,
         scale,

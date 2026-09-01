@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { buildReviewIssues } from "../../domain/qc";
+import { isTrackingStale } from "../../domain/trackingProvenance";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
 import { runTrackingOnVideo } from "../../video/runTracking";
@@ -116,9 +117,16 @@ export function TrackPage() {
               <Banner kind="warn">Relink this video to run tracking.</Banner>
             )}
             <p className="help">
-              Analysis sampling: {session.parameters.sampling.targetObservationsPerSecond} observations/s (source{" "}
-              {trial.source.fps ? `${trial.source.fps.toFixed(3)} fps` : "timebase from media timestamps"}).
+              Analysis sampling: {trial.tracking?.analysisSamplingHz ?? session.parameters.sampling.targetObservationsPerSecond}{" "}
+              observations/s used
+              {isTrackingStale(trial.tracking)
+                ? ` · pending ${session.parameters.sampling.targetObservationsPerSecond} observations/s`
+                : ""}{" "}
+              (source {trial.source.fps ? `${trial.source.fps.toFixed(3)} fps` : "timebase from media timestamps"}).
             </p>
+            {isTrackingStale(trial.tracking) ? (
+              <Banner kind="warn">Tracking settings changed. Re-run tracking to apply them.</Banner>
+            ) : null}
             {runningThis ? (
               <div className="panel" style={{ marginTop: 16 }}>
                 <ol className="setup-list">
@@ -156,7 +164,16 @@ export function TrackPage() {
             <aside className="panel">
               <h3>Tracking complete</h3>
               <dl className="metrics compact-metrics">
-                <MetricCard label="Coverage" value={trial.qc.trackingCoveragePercent} unit="%" />
+                <MetricCard
+                  label="Automatic tracking"
+                  value={trial.qc.automaticTrackingCoveragePercent ?? trial.qc.trackingCoveragePercent}
+                  unit="%"
+                />
+                <MetricCard
+                  label="Effective trajectory"
+                  value={trial.qc.effectiveTrajectoryCoveragePercent ?? trial.qc.trackingCoveragePercent}
+                  unit="%"
+                />
                 <MetricCard label="Low confidence" value={trial.qc.lowConfidence} />
                 <MetricCard label="Failed" value={trial.qc.failed} />
                 <MetricCard label="Interpolated" value={trial.qc.interpolated} />
@@ -188,7 +205,16 @@ export function TrackPage() {
             <MetricCard label="Low confidence" value={trial.qc.lowConfidence} />
             <MetricCard label="Failed" value={trial.qc.failed} />
             <MetricCard label="Interpolated" value={trial.qc.interpolated} />
-            <MetricCard label="Coverage" value={trial.qc.trackingCoveragePercent} unit="%" />
+            <MetricCard
+              label="Automatic tracking"
+              value={trial.qc.automaticTrackingCoveragePercent ?? trial.qc.trackingCoveragePercent}
+              unit="%"
+            />
+            <MetricCard
+              label="Effective trajectory"
+              value={trial.qc.effectiveTrajectoryCoveragePercent ?? trial.qc.trackingCoveragePercent}
+              unit="%"
+            />
             <MetricCard label="Largest gap" value={trial.qc.largestMissingIntervalSeconds} unit="s" />
           </dl>
           {trial.qc.warnings.map((warning) => (

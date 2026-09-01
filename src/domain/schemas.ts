@@ -59,6 +59,8 @@ export const arenaSchema = z.object({
 export const trackingSampleSchema = z.object({
   timestampSeconds: z.number().nonnegative(),
   frameIndex: z.number().int().nonnegative().optional(),
+  analysisSampleIndex: z.number().int().nonnegative().optional(),
+  sourceFrameIndex: z.number().int().nonnegative().optional(),
   body: pointSchema.optional(),
   head: pointSchema.optional(),
   confidence: z.number().min(0).max(1),
@@ -79,6 +81,26 @@ export const trackingSampleSchema = z.object({
     .optional(),
 });
 
+export const trackingProvenanceSchema = z.object({
+  sampling: z.object({
+    targetObservationsPerSecond: z.number().positive(),
+  }),
+  tracking: z.object({
+    backgroundFrameCount: z.number().int().positive(),
+    foregroundThreshold: z.union([z.literal("auto"), z.number()]),
+    morphologyRadiusPx: z.number().nonnegative(),
+    platformMarginPx: z.number(),
+  }),
+  arenaSnapshot: z.object({
+    platformCenterPx: pointSchema,
+    platformRadiusPx: z.number().positive(),
+    holeCentersPx: z.array(pointSchema).optional(),
+    holeRadiusPx: z.number().positive().optional(),
+  }),
+  createdAt: z.string(),
+  configHash: z.string().optional(),
+});
+
 export const trackingResultSchema = z.object({
   rawSamples: z.array(trackingSampleSchema),
   effectiveSamples: z.array(trackingSampleSchema),
@@ -86,6 +108,8 @@ export const trackingResultSchema = z.object({
   startedAt: z.string(),
   finishedAt: z.string(),
   cancelled: z.boolean().optional(),
+  status: z.enum(["ready", "stale"]).optional(),
+  provenance: trackingProvenanceSchema.optional(),
 });
 
 export const correctionSchema = z.object({
@@ -209,6 +233,8 @@ export const trialSchema = z.object({
       manual: z.number(),
       largestMissingIntervalSeconds: z.number(),
       trackingCoveragePercent: z.number(),
+      automaticTrackingCoveragePercent: z.number().optional(),
+      effectiveTrajectoryCoveragePercent: z.number().optional(),
       warnings: z.array(z.string()),
     })
     .optional(),

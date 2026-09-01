@@ -25,10 +25,23 @@ export type FrameTrackInput = {
   arena: ArenaGeometry;
   parameters: TrackingParameters;
   timestampSeconds: number;
+  /** Analysis sampling loop index. Prefer analysisSampleIndex. */
   frameIndex?: number;
+  analysisSampleIndex?: number;
+  sourceFrameIndex?: number;
   memory: TrackerMemory;
   scale?: number;
 };
+
+function analysisIndexFields(input: FrameTrackInput): Pick<
+  TrackingSample,
+  "analysisSampleIndex" | "sourceFrameIndex"
+> {
+  return {
+    analysisSampleIndex: input.analysisSampleIndex ?? input.frameIndex,
+    sourceFrameIndex: input.sourceFrameIndex,
+  };
+}
 
 function toOriginal(point: Point, scale: number): Point {
   return { x: point.x / scale, y: point.y / scale };
@@ -109,7 +122,7 @@ export function trackFrame(input: FrameTrackInput): { sample: TrackingSample; me
       memory,
       sample: {
         timestampSeconds: input.timestampSeconds,
-        frameIndex: input.frameIndex,
+        ...analysisIndexFields(input),
         confidence: 0,
         status: "failed",
         source: "automatic",
@@ -137,7 +150,7 @@ export function trackFrame(input: FrameTrackInput): { sample: TrackingSample; me
       memory,
       sample: {
         timestampSeconds: input.timestampSeconds,
-        frameIndex: input.frameIndex,
+        ...analysisIndexFields(input),
         confidence: 0.1,
         status: "failed",
         source: "automatic",
@@ -204,7 +217,7 @@ export function trackFrame(input: FrameTrackInput): { sample: TrackingSample; me
     memory,
     sample: {
       timestampSeconds: input.timestampSeconds,
-      frameIndex: input.frameIndex,
+      ...analysisIndexFields(input),
       body,
       head,
       confidence,

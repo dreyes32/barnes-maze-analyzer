@@ -1,11 +1,15 @@
+import { methodNumberSchemas } from "../../domain/parameterValues";
+import { isTrackingStale } from "../../domain/trackingProvenance";
 import { useSessionStore } from "../../state/sessionStore";
-import { Field } from "../ui";
-import { Banner } from "../ui";
+import { Banner, Field } from "../ui";
+import { ValidatedNumberInput } from "./ValidatedNumberInput";
 
 export function MethodPanel() {
   const parameters = useSessionStore((state) => state.session.parameters);
+  const trials = useSessionStore((state) => state.session.trials);
   const updateParameters = useSessionStore((state) => state.updateParameters);
   const impact = useSessionStore((state) => state.lastImpactText);
+  const stale = trials.some((trial) => isTrackingStale(trial.tracking));
 
   const gap =
     parameters.cleanup.gapFill === "none"
@@ -23,24 +27,32 @@ export function MethodPanel() {
         </span>
       </summary>
       <p className="help">
-        These definitions are the ones used for events, cleanup, and strategy. Changing a value recomputes
-        everything downstream and keeps raw automatic tracking.
+        Cleanup, event, and strategy values recompute from existing tracking. Sampling and tracking
+        settings are applied only when you re-run tracking.
       </p>
+      {stale ? (
+        <Banner kind="warn">Tracking settings changed. Re-run tracking to apply them.</Banner>
+      ) : null}
       {impact ? <Banner kind="info">{impact}</Banner> : null}
       <div className="method-grid">
         <Field label="Analysis sampling (observations / s)">
-          <input
+          <ValidatedNumberInput
             type="number"
             min={1}
             max={30}
             value={parameters.sampling.targetObservationsPerSecond}
-            onChange={(event) =>
+            schema={methodNumberSchemas.targetObservationsPerSecond}
+            onCommit={(value) =>
               updateParameters(
                 (current) => ({
                   ...current,
-                  sampling: { targetObservationsPerSecond: Number(event.target.value) },
+                  sampling: { targetObservationsPerSecond: value as number },
                 }),
-                { path: "analysis sampling", before: String(parameters.sampling.targetObservationsPerSecond), after: event.target.value },
+                {
+                  path: "analysis sampling",
+                  before: String(parameters.sampling.targetObservationsPerSecond),
+                  after: String(value),
+                },
               )
             }
           />
@@ -63,17 +75,18 @@ export function MethodPanel() {
           </select>
         </Field>
         <Field label="Interpolate gaps ≤ (s)">
-          <input
+          <ValidatedNumberInput
             type="number"
             step="0.05"
             value={parameters.cleanup.maxGapSeconds}
-            onChange={(event) =>
+            schema={methodNumberSchemas.maxGapSeconds}
+            onCommit={(value) =>
               updateParameters(
                 (current) => ({
                   ...current,
-                  cleanup: { ...current.cleanup, maxGapSeconds: Number(event.target.value) },
+                  cleanup: { ...current.cleanup, maxGapSeconds: value as number },
                 }),
-                { path: "maximum gap", before: String(parameters.cleanup.maxGapSeconds), after: event.target.value },
+                { path: "maximum gap", before: String(parameters.cleanup.maxGapSeconds), after: String(value) },
               )
             }
           />
@@ -96,98 +109,128 @@ export function MethodPanel() {
           </select>
         </Field>
         <Field label="Smoothing window">
-          <input
+          <ValidatedNumberInput
             type="number"
             min={3}
             step={2}
             value={parameters.cleanup.smoothingWindow}
-            onChange={(event) =>
+            schema={methodNumberSchemas.smoothingWindow}
+            onCommit={(value) =>
               updateParameters(
                 (current) => ({
                   ...current,
-                  cleanup: { ...current.cleanup, smoothingWindow: Number(event.target.value) },
+                  cleanup: { ...current.cleanup, smoothingWindow: value as number },
                 }),
-                { path: "smoothing window", before: String(parameters.cleanup.smoothingWindow), after: event.target.value },
+                {
+                  path: "smoothing window",
+                  before: String(parameters.cleanup.smoothingWindow),
+                  after: String(value),
+                },
               )
             }
           />
         </Field>
         <Field label="Investigation radius (cm)">
-          <input
+          <ValidatedNumberInput
             type="number"
             step="0.1"
             value={parameters.events.investigationRadiusCm}
-            onChange={(event) =>
+            schema={methodNumberSchemas.investigationRadiusCm}
+            onCommit={(value) =>
               updateParameters(
                 (current) => ({
                   ...current,
-                  events: { ...current.events, investigationRadiusCm: Number(event.target.value) },
+                  events: { ...current.events, investigationRadiusCm: value as number },
                 }),
-                { path: "investigation radius", before: String(parameters.events.investigationRadiusCm), after: event.target.value },
+                {
+                  path: "investigation radius",
+                  before: String(parameters.events.investigationRadiusCm),
+                  after: String(value),
+                },
               )
             }
           />
         </Field>
         <Field label="Minimum investigation (s)">
-          <input
+          <ValidatedNumberInput
             type="number"
             step="0.05"
             value={parameters.events.minInvestigationSeconds}
-            onChange={(event) =>
+            schema={methodNumberSchemas.minInvestigationSeconds}
+            onCommit={(value) =>
               updateParameters(
                 (current) => ({
                   ...current,
-                  events: { ...current.events, minInvestigationSeconds: Number(event.target.value) },
+                  events: { ...current.events, minInvestigationSeconds: value as number },
                 }),
-                { path: "minimum investigation duration", before: String(parameters.events.minInvestigationSeconds), after: event.target.value },
+                {
+                  path: "minimum investigation duration",
+                  before: String(parameters.events.minInvestigationSeconds),
+                  after: String(value),
+                },
               )
             }
           />
         </Field>
         <Field label="Visit separation (s)">
-          <input
+          <ValidatedNumberInput
             type="number"
             step="0.05"
             value={parameters.events.separationSeconds}
-            onChange={(event) =>
+            schema={methodNumberSchemas.separationSeconds}
+            onCommit={(value) =>
               updateParameters(
                 (current) => ({
                   ...current,
-                  events: { ...current.events, separationSeconds: Number(event.target.value) },
+                  events: { ...current.events, separationSeconds: value as number },
                 }),
-                { path: "visit separation", before: String(parameters.events.separationSeconds), after: event.target.value },
+                {
+                  path: "visit separation",
+                  before: String(parameters.events.separationSeconds),
+                  after: String(value),
+                },
               )
             }
           />
         </Field>
         <Field label="Hysteresis factor">
-          <input
+          <ValidatedNumberInput
             type="number"
             step="0.05"
             value={parameters.events.hysteresisFactor}
-            onChange={(event) =>
+            schema={methodNumberSchemas.hysteresisFactor}
+            onCommit={(value) =>
               updateParameters(
                 (current) => ({
                   ...current,
-                  events: { ...current.events, hysteresisFactor: Number(event.target.value) },
+                  events: { ...current.events, hysteresisFactor: value as number },
                 }),
-                { path: "hysteresis factor", before: String(parameters.events.hysteresisFactor), after: event.target.value },
+                {
+                  path: "hysteresis factor",
+                  before: String(parameters.events.hysteresisFactor),
+                  after: String(value),
+                },
               )
             }
           />
         </Field>
         <Field label="Escape disappearance (s)">
-          <input
+          <ValidatedNumberInput
             type="number"
             step="0.05"
             value={parameters.events.escapeDisappearanceSeconds}
-            onChange={(event) =>
+            schema={methodNumberSchemas.escapeDisappearanceSeconds}
+            onCommit={(value) =>
               updateParameters(
                 (current) => ({
                   ...current,
-                  events: { ...current.events, escapeDisappearanceSeconds: Number(event.target.value) },
+                  events: { ...current.events, escapeDisappearanceSeconds: value as number },
                 }),
-                { path: "escape disappearance duration", before: String(parameters.events.escapeDisappearanceSeconds), after: event.target.value },
+                {
+                  path: "escape disappearance duration",
+                  before: String(parameters.events.escapeDisappearanceSeconds),
+                  after: String(value),
+                },
               )
             }
           />
@@ -197,64 +240,84 @@ export function MethodPanel() {
         <summary>Advanced tracking and strategy thresholds</summary>
         <div className="method-grid">
           <Field label="Foreground threshold">
-            <input
+            <ValidatedNumberInput
               value={parameters.tracking.foregroundThreshold}
-              onChange={(event) =>
+              schema={methodNumberSchemas.foregroundThreshold}
+              onCommit={(value) =>
                 updateParameters(
                   (current) => ({
                     ...current,
                     tracking: {
                       ...current.tracking,
-                      foregroundThreshold: event.target.value === "auto" ? "auto" : Number(event.target.value),
+                      foregroundThreshold: value,
                     },
                   }),
-                  { path: "foreground threshold", before: String(parameters.tracking.foregroundThreshold), after: event.target.value },
+                  {
+                    path: "foreground threshold",
+                    before: String(parameters.tracking.foregroundThreshold),
+                    after: String(value),
+                  },
                 )
               }
             />
           </Field>
           <Field label="Outlier multiplier">
-            <input
+            <ValidatedNumberInput
               type="number"
               value={parameters.cleanup.outlierMultiplier}
-              onChange={(event) =>
+              schema={methodNumberSchemas.outlierMultiplier}
+              onCommit={(value) =>
                 updateParameters(
                   (current) => ({
                     ...current,
-                    cleanup: { ...current.cleanup, outlierMultiplier: Number(event.target.value) },
+                    cleanup: { ...current.cleanup, outlierMultiplier: value as number },
                   }),
-                  { path: "outlier multiplier", before: String(parameters.cleanup.outlierMultiplier), after: event.target.value },
+                  {
+                    path: "outlier multiplier",
+                    before: String(parameters.cleanup.outlierMultiplier),
+                    after: String(value),
+                  },
                 )
               }
             />
           </Field>
           <Field label="Spatial max primary errors">
-            <input
+            <ValidatedNumberInput
               type="number"
               value={parameters.strategy.spatialMaxPrimaryErrors}
-              onChange={(event) =>
+              schema={methodNumberSchemas.spatialMaxPrimaryErrors}
+              onCommit={(value) =>
                 updateParameters(
                   (current) => ({
                     ...current,
-                    strategy: { ...current.strategy, spatialMaxPrimaryErrors: Number(event.target.value) },
+                    strategy: { ...current.strategy, spatialMaxPrimaryErrors: value as number },
                   }),
-                  { path: "spatial max primary errors", before: String(parameters.strategy.spatialMaxPrimaryErrors), after: event.target.value },
+                  {
+                    path: "spatial max primary errors",
+                    before: String(parameters.strategy.spatialMaxPrimaryErrors),
+                    after: String(value),
+                  },
                 )
               }
             />
           </Field>
           <Field label="Serial min adjacency">
-            <input
+            <ValidatedNumberInput
               type="number"
               step="0.05"
               value={parameters.strategy.serialMinAdjacencyRatio}
-              onChange={(event) =>
+              schema={methodNumberSchemas.serialMinAdjacencyRatio}
+              onCommit={(value) =>
                 updateParameters(
                   (current) => ({
                     ...current,
-                    strategy: { ...current.strategy, serialMinAdjacencyRatio: Number(event.target.value) },
+                    strategy: { ...current.strategy, serialMinAdjacencyRatio: value as number },
                   }),
-                  { path: "serial adjacency", before: String(parameters.strategy.serialMinAdjacencyRatio), after: event.target.value },
+                  {
+                    path: "serial adjacency",
+                    before: String(parameters.strategy.serialMinAdjacencyRatio),
+                    after: String(value),
+                  },
                 )
               }
             />

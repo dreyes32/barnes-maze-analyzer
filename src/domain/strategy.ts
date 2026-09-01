@@ -93,20 +93,50 @@ function directionalConsistency(sequence: number[], holeCount = 20): number | nu
   return Math.max(plus, minus) / directed;
 }
 
+export function firstTargetInvestigation(events: BehavioralEvent[]): BehavioralEvent | undefined {
+  return events
+    .filter((event) => event.type === "target-investigation")
+    .sort((a, b) => a.startSeconds - b.startSeconds)[0];
+}
+
+/**
+ * Search strategy describes how the animal searched for the target:
+ * trial start → first valid target investigation.
+ * If no target investigation occurs, the available trial trajectory is used.
+ */
+export function strategyEpoch(options: {
+  samples: TrackingSample[];
+  events: BehavioralEvent[];
+}): { samples: TrackingSample[]; events: BehavioralEvent[]; usedFullTrajectory: boolean } {
+  const firstTarget = firstTargetInvestigation(options.events);
+  if (!firstTarget) {
+    return { samples: options.samples, events: options.events, usedFullTrajectory: true };
+  }
+  const endSeconds = firstTarget.endSeconds ?? firstTarget.startSeconds;
+  return {
+    samples: options.samples.filter((sample) => sample.timestampSeconds <= endSeconds),
+    events: options.events.filter(
+      (event) => event.type !== "escape-entry" && event.startSeconds <= endSeconds,
+    ),
+    usedFullTrajectory: false,
+  };
+}
+
 export function deriveStrategyFeatures(options: {
   samples: TrackingSample[];
   events: BehavioralEvent[];
   arena: ArenaGeometry;
   metrics: TrialMetrics;
 }): StrategyFeatures {
-  const sequence = visitSequence(options.events);
+  const epoch = strategyEpoch(options);
+  const sequence = visitSequence(epoch.events);
   const transitions = transitionCounts(sequence);
   return {
     primaryErrors: options.metrics.primaryErrors ?? null,
     primaryLatencySeconds: options.metrics.primaryLatencySeconds ?? null,
-    pathEfficiency: pathEfficiency(options.samples, options.arena),
-    perimeterOccupancy: perimeterOccupancy(options.samples, options.arena),
-    centerCrossings: centerCrossings(options.samples, options.arena),
+    pathEfficiency: pathEfficiency(epoch.samples, options.arena),
+    perimeterOccupancy: perimeterOccupancy(epoch.samples, options.arena),
+    centerCrossings: centerCrossings(epoch.samples, options.arena),
     uniqueHolesInvestigated: new Set(sequence).size,
     transitionCount: transitions.transitionCount,
     adjacentTransitionCount: transitions.adjacentTransitionCount,
@@ -195,12 +225,18 @@ export function computeStrategy(options: {
 }): SearchStrategyResult {
   const features = deriveStrategyFeatures(options);
   const automatic = classifyStrategy(features, options.parameters);
+  const epoch = strategyEpoch(options);
+  const epochNote = epoch.usedFullTrajectory
+    ? "No target investigation was detected; search strategy uses the available trial trajectory."
+    : "Search strategy is classified from trial start through the first valid target investigation.";
   return {
     automatic: automatic.label,
     effective: options.override ?? automatic.label,
     overridden: options.override !== undefined && options.override !== automatic.label,
     features,
-    reasoning: automatic.reasoning,
+    reasoning: [automatic.reasoning[0], epochNote, ...automatic.reasoning.slice(1)].filter(
+      (line): line is string => Boolean(line),
+    ),
   };
 }
 

@@ -3,6 +3,7 @@ import { detectEvents } from "./events";
 import { computeMetrics } from "./metrics";
 import { computeQc, qcWarningForTargetDisappearance } from "./qc";
 import { computeStrategy, strategyOverrideFromCorrections } from "./strategy";
+import { isTrackingStale, migrateTrackingResult } from "./trackingProvenance";
 import type {
   AnalysisParameters,
   AnalysisSession,
@@ -26,7 +27,8 @@ export function recomputeTrial(trial: TrialRecord, parameters: AnalysisParameter
     return { ...trial, reviewStatus: deriveReviewStatus(trial) };
   }
 
-  const afterManual = applyManualCorrections(trial.tracking.rawSamples, trial.corrections);
+  const tracking = migrateTrackingResult(trial.tracking);
+  const afterManual = applyManualCorrections(tracking.rawSamples, trial.corrections);
   const cleaned = applyCleanup(afterManual, parameters.cleanup);
   const effectiveSamples = cleaned.samples;
 
@@ -51,17 +53,22 @@ export function recomputeTrial(trial: TrialRecord, parameters: AnalysisParameter
       })
     : trial.strategy;
 
-  const qc = computeQc(effectiveSamples);
-  const extra = qcWarningForTargetDisappearance({ ...trial, events, tracking: { ...trial.tracking, effectiveSamples } });
+  const qc = computeQc(effectiveSamples, tracking.rawSamples);
+  const extra = qcWarningForTargetDisappearance({ ...trial, events, tracking: { ...tracking, effectiveSamples } });
   if (extra && !qc.warnings.includes(extra)) qc.warnings.push(extra);
   if (cleaned.outlierCount > 0) {
     qc.warnings.push(`${cleaned.outlierCount} observations exceed the movement outlier threshold.`);
+  }
+  if (isTrackingStale(tracking)) {
+    const stale =
+      "Tracking settings changed. Re-run tracking to apply them. Current results use the previous tracking run.";
+    if (!qc.warnings.includes(stale)) qc.warnings.push(stale);
   }
 
   return {
     ...trial,
     tracking: {
-      ...trial.tracking,
+      ...tracking,
       effectiveSamples,
     },
     events,
@@ -70,7 +77,7 @@ export function recomputeTrial(trial: TrialRecord, parameters: AnalysisParameter
     qc,
     reviewStatus: deriveReviewStatus({
       ...trial,
-      tracking: { ...trial.tracking, effectiveSamples },
+      tracking: { ...tracking, effectiveSamples },
     }),
   };
 }

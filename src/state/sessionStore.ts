@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { DEFAULT_PARAMETERS } from "../domain/defaults";
 import { createId, nowIso } from "../domain/ids";
 import { describeParameterImpact, formatParameterImpact, recomputeSession, recomputeTrial } from "../domain/pipeline";
+import { applyArenaToTrial, applyUpstreamParameterChange, buildTrackingProvenance } from "../domain/trackingProvenance";
 import { createEmptySession, createTrial, createTrialGroup, removeTrialFromSession } from "../domain/session";
 import type {
   AnalysisParameters,
@@ -262,36 +263,25 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   setArena: (trialId, arena) => {
     const session = get().session;
-    const next = recomputeSession(
-      withTrial(session, trialId, (trial) => ({
-        ...trial,
-        arena,
-        reviewStatus: trial.tracking ? trial.reviewStatus : "arena-ready",
-      })),
-    );
+    const next = recomputeSession(withTrial(session, trialId, (trial) => applyArenaToTrial(trial, arena)));
     set({ session: next });
     void get().persist();
   },
 
   reuseArena: (fromTrialId, toTrialId, arena) => {
     const session = get().session;
-    const next = recomputeSession(
-      withTrial(session, toTrialId, (trial) => ({
-        ...trial,
-        arena: {
-          ...arena,
-          geometrySource: arena.geometrySource === "manual" ? "reused" : arena.geometrySource,
-          registration: {
-            translationX: arena.registration?.translationX ?? 0,
-            translationY: arena.registration?.translationY ?? 0,
-            scale: arena.registration?.scale ?? 1,
-            rotationRadians: arena.registration?.rotationRadians ?? 0,
-            fromTrialId,
-          },
-        },
-        reviewStatus: trial.tracking ? trial.reviewStatus : "arena-ready",
-      })),
-    );
+    const reused: ArenaGeometry = {
+      ...arena,
+      geometrySource: arena.geometrySource === "manual" ? "reused" : arena.geometrySource,
+      registration: {
+        translationX: arena.registration?.translationX ?? 0,
+        translationY: arena.registration?.translationY ?? 0,
+        scale: arena.registration?.scale ?? 1,
+        rotationRadians: arena.registration?.rotationRadians ?? 0,
+        fromTrialId,
+      },
+    };
+    const next = recomputeSession(withTrial(session, toTrialId, (trial) => applyArenaToTrial(trial, reused)));
     set({ session: next });
     void get().persist();
   },
@@ -301,8 +291,14 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const next = recomputeSession(
       withTrial(session, trialId, (trial) => ({
         ...trial,
-        tracking,
-        reviewStatus: tracking.cancelled ? "needs-review" : "needs-review",
+        tracking: {
+          ...tracking,
+          status: tracking.cancelled ? tracking.status : "ready",
+          provenance:
+            tracking.provenance ??
+            (trial.arena ? buildTrackingProvenance(session.parameters, trial.arena, tracking.startedAt) : undefined),
+        },
+        reviewStatus: "needs-review",
       })),
     );
     set({ session: next });
@@ -360,7 +356,13 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   updateParameters: (updater, labels) => {
     const before = get().session;
     const nextParams = updater(before.parameters);
-    const after = recomputeSession({ ...before, parameters: nextParams, updatedAt: nowIso() });
+    const trials = applyUpstreamParameterChange(before.trials, before.parameters, nextParams);
+    const after = recomputeSession({
+      ...before,
+      parameters: nextParams,
+      trials,
+      updatedAt: nowIso(),
+    });
     const impact = describeParameterImpact(before, after, labels.path, labels.before, labels.after);
     set({
       session: after,

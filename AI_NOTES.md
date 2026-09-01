@@ -14,6 +14,8 @@ I directed the work: official Salk brief first, then domain algorithms and tests
 
 3. **Largest-bright-blob circle detection failed on `test53`.** A first automatic platform estimate used the largest bright component. On `test53` that produced center ≈ (212, 201) and radius ≈ 89 px (the maze is closer to r ≈ 185). Coverage was 0%. Replaced with radial brightness falloff from near the image center; all three clips then got plausible circles. An offline helper also double-scaled arena coordinates (geometry from already-downsampled frames plus `scale: 0.5`); that was a second, independent 0% coverage bug and was aligned with the browser client.
 
+4. **Automatic event IDs were initially regenerated with random UUIDs during every recomputation.** Because manual event corrections referenced those IDs, a rejected or edited automatic event could return after recomputation. The issue was found during code review. Automatic detections now use deterministic identities, and regression tests verify rejection/edit persistence through `recomputeTrial()`.
+
 ## Verification
 
 Before treating a result as real: Vitest domain tests (timebase, cleanup, events, metrics, strategy, schema, CSV columns, dominant-`stts` duration including leftover samples that would average to ~15.005); TypeScript + production build; the same tracker run on extracted frames from all three Salk MP4s with **manually inspected target holes** (not a placeholder); Playwright Chromium for load-demo → correct → metrics change → reload persistence → CSV export; manual inspection of the official stills before choosing background subtraction. Sample MP4s were downloaded only into `.local-data/` and are not committed.

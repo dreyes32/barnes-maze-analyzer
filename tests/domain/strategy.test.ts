@@ -44,7 +44,7 @@ describe("strategy", () => {
   });
 
   it("classifies adjacent hole-by-hole search as serial, including 20 → 1", () => {
-    const events = [19, 0, 1, 2, 3].map((hole, index) => visit(hole, index + 1));
+    const events = [16, 17, 18, 19, 0].map((hole, index) => visit(hole, index + 1));
     const samples: TrackingSample[] = events.map((event) => ({
       timestampSeconds: event.startSeconds,
       body: arena.holeCentersPx[event.holeIndex ?? 0],
@@ -119,5 +119,68 @@ describe("strategy", () => {
     expect(result.automatic).toBe("spatial");
     expect(result.effective).toBe("serial");
     expect(result.overridden).toBe(true);
+  });
+
+  it("does not let post-target wandering turn a direct search into random", () => {
+    const target = arena.holeCentersPx[0];
+    const samples: TrackingSample[] = [
+      { timestampSeconds: 0, body: { x: 0, y: 0 }, confidence: 1, status: "tracked", source: "automatic" },
+      { timestampSeconds: 1, body: target, confidence: 1, status: "tracked", source: "automatic" },
+      ...Array.from({ length: 40 }, (_, i) => ({
+        timestampSeconds: 2 + i,
+        body: { x: Math.sin(i) * 60, y: Math.cos(i * 1.7) * 60 },
+        confidence: 1,
+        status: "tracked" as const,
+        source: "automatic" as const,
+      })),
+    ];
+    const lateVisits = [7, 12, 3, 15].map((hole, index) => visit(hole, 10 + index));
+    const result = computeStrategy({
+      samples,
+      events: [visit(0, 1), ...lateVisits],
+      arena,
+      metrics: { primaryErrors: 0, primaryLatencySeconds: 1, unavailableReasons: [] },
+      parameters: DEFAULT_PARAMETERS.strategy,
+    });
+    expect(result.automatic).toBe("spatial");
+    expect(result.features.uniqueHolesInvestigated).toBe(1);
+    expect(result.reasoning.some((line) => line.includes("first valid target investigation"))).toBe(true);
+  });
+
+  it("classifies a serial sequence that reaches the target as serial", () => {
+    const events = [16, 17, 18, 19, 0].map((hole, index) => visit(hole, index + 1));
+    const samples: TrackingSample[] = events.map((event) => ({
+      timestampSeconds: event.startSeconds,
+      body: arena.holeCentersPx[event.holeIndex ?? 0],
+      confidence: 1,
+      status: "tracked" as const,
+      source: "automatic" as const,
+    }));
+    const result = computeStrategy({
+      samples,
+      events,
+      arena,
+      metrics: { primaryErrors: 4, primaryLatencySeconds: 5, unavailableReasons: [] },
+      parameters: DEFAULT_PARAMETERS.strategy,
+    });
+    expect(result.automatic).toBe("serial");
+  });
+
+  it("uses the full available trajectory when no target investigation occurs", () => {
+    const events = [2, 11, 7, 16].map((hole, index) => visit(hole, index + 1));
+    const samples: TrackingSample[] = [
+      { timestampSeconds: 0, body: { x: 0, y: 0 }, confidence: 1, status: "tracked", source: "automatic" },
+      { timestampSeconds: 8, body: { x: 40, y: -20 }, confidence: 1, status: "tracked", source: "automatic" },
+    ];
+    const result = computeStrategy({
+      samples,
+      events,
+      arena,
+      metrics: { primaryErrors: 4, primaryLatencySeconds: null, unavailableReasons: [] },
+      parameters: DEFAULT_PARAMETERS.strategy,
+    });
+    expect(result.automatic).toBe("random");
+    expect(result.features.uniqueHolesInvestigated).toBe(4);
+    expect(result.reasoning.some((line) => line.includes("available trial trajectory"))).toBe(true);
   });
 });

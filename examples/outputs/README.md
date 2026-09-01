@@ -14,8 +14,10 @@ Important about these numbers:
   - `test53` — hole 3 (mouse is at the 4 o'clock hole from ~25 s through trial end)
 - **`test51.mp4` uses a nominal frame rate of `15000/1001 ≈ 14.985 fps`.** The analyzer does not assume integer FPS. Browser analysis uses source media timestamps. Duration/frame-count averages near 15.005 are a container artifact, not the advertised frame rate.
 - **Platform diameter is 91 cm** in this export because a centimeter scale is required for path length. That value was entered for the sample run; the app does not assume it.
-- **Coverage is not a quality grade.** High coverage can include low-confidence observations. Review the QC warnings in the JSON and the quality timeline in the app.
+- **Coverage is not a quality grade.** High coverage can include low-confidence observations. Review the QC warnings in the JSON and the quality timeline in the app. **Automatic tracking coverage** is the raw tracker success rate. **Effective trajectory coverage** includes interpolation and manual corrections. Older “tracking coverage” figures are the effective value.
+- **Search strategy** uses behavior through the first valid target investigation, not the full post-target wander.
 - **Mean speed is time-weighted** (valid path length / valid tracked duration). These files were regenerated after that definition change; event counts and target holes are unchanged.
+- **Tracking CSV** uses `analysis_sample_index` (analysis loop) rather than a source video frame number. Timestamp remains authoritative.
 
 Regenerate (requires local `.local-data/` videos and extracted frames):
 

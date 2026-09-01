@@ -17,7 +17,12 @@ function missingIntervals(samples: TrackingSample[]): Array<{ start: number; end
   return intervals;
 }
 
-export function computeQc(samples: TrackingSample[]): QCSummary {
+function coveragePercent(samples: TrackingSample[], visible: (sample: TrackingSample) => boolean): number {
+  if (samples.length === 0) return 0;
+  return (samples.filter(visible).length / samples.length) * 100;
+}
+
+export function computeQc(samples: TrackingSample[], rawSamples?: TrackingSample[]): QCSummary {
   const observationsAttempted = samples.length;
   const tracked = samples.filter((sample) => sample.status === "tracked" && sample.source === "automatic").length;
   const lowConfidence = samples.filter((sample) => sample.status === "low-confidence").length;
@@ -31,7 +36,18 @@ export function computeQc(samples: TrackingSample[]): QCSummary {
     0,
   );
   const visible = samples.filter((sample) => Boolean(sample.body)).length;
-  const trackingCoveragePercent = observationsAttempted === 0 ? 0 : (visible / observationsAttempted) * 100;
+  const effectiveTrajectoryCoveragePercent =
+    observationsAttempted === 0 ? 0 : (visible / observationsAttempted) * 100;
+  const trackingCoveragePercent = effectiveTrajectoryCoveragePercent;
+  const automaticSource = rawSamples ?? samples.filter((sample) => sample.source === "automatic");
+  const automaticTrackingCoveragePercent = coveragePercent(
+    automaticSource,
+    (sample) =>
+      sample.source === "automatic" &&
+      Boolean(sample.body) &&
+      sample.status !== "failed" &&
+      sample.status !== "hidden",
+  );
 
   const warnings: string[] = [];
   if (largestMissingIntervalSeconds >= 0.8) {
@@ -60,6 +76,8 @@ export function computeQc(samples: TrackingSample[]): QCSummary {
     manual,
     largestMissingIntervalSeconds,
     trackingCoveragePercent,
+    automaticTrackingCoveragePercent,
+    effectiveTrajectoryCoveragePercent,
     warnings,
   };
 }

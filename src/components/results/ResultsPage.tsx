@@ -1,3 +1,4 @@
+import { isTrackingStale } from "../../domain/trackingProvenance";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { trialSummaryCsv, eventsCsv, trackingPointsCsv } from "../../export/csv";
 import { downloadXlsx } from "../../export/xlsx";
@@ -78,6 +79,9 @@ export function ResultsPage() {
       </PageHeader>
       {session.isDemo ? (
         <Banner kind="info">This is a labeled example analysis, not a newly executed run on this machine.</Banner>
+      ) : null}
+      {isTrackingStale(trial.tracking) ? (
+        <Banner kind="warn">Tracking settings changed. Re-run tracking to apply them. Exported tracking parameters are those of the existing run; pending settings are labeled separately.</Banner>
       ) : null}
       {!trial.tracking ? (
         <section className="empty-state">
@@ -201,6 +205,10 @@ export function ResultsPage() {
         {trial.strategy ? (
           <section>
             <h3>Search strategy</h3>
+            <p className="help">
+              Search strategy is classified from behavior up to the first valid target investigation. If no
+              target investigation occurs, the available trial trajectory is used.
+            </p>
             <p>
               Automatic classification: <strong>{trial.strategy.automatic}</strong>
               {trial.strategy.overridden
@@ -246,7 +254,7 @@ export function ResultsPage() {
                 <th>Total latency (s)</th>
                 <th>Primary errors</th>
                 <th>Strategy</th>
-                <th>Coverage %</th>
+                <th>Effective coverage %</th>
               </tr>
             </thead>
             <tbody>
@@ -258,7 +266,9 @@ export function ResultsPage() {
                   <td>{item.metrics?.totalLatencySeconds ?? ""}</td>
                   <td>{item.metrics?.primaryErrors ?? ""}</td>
                   <td>{item.strategy?.effective ?? ""}</td>
-                  <td>{item.qc?.trackingCoveragePercent?.toFixed(1) ?? ""}</td>
+                  <td>
+                    {(item.qc?.effectiveTrajectoryCoveragePercent ?? item.qc?.trackingCoveragePercent)?.toFixed(1) ?? ""}
+                  </td>
                 </tr>
               ))}
             </tbody>

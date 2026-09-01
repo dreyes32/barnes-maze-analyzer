@@ -3,6 +3,7 @@ import {
   copyArena,
   createAssistedArena,
   distance,
+  nudgePlatformCenter,
   rotateHoles,
   scaleHoleRing,
   transformArena,
@@ -14,32 +15,37 @@ import { getVideoUrl } from "../../state/videoRegistry";
 import { Banner, Field, PageHeader, WorkspaceFooter } from "../ui";
 
 type SetupStep = "platform-center" | "platform-edge" | "first-hole" | "adjust";
+type ArenaSelection = { kind: "platform" } | { kind: "hole"; index: number };
 
 function drawArena(
   ctx: CanvasRenderingContext2D,
   arena: Partial<ArenaGeometry>,
   video: HTMLVideoElement,
+  selection?: ArenaSelection,
 ) {
   const width = ctx.canvas.width;
   const height = ctx.canvas.height;
   ctx.clearRect(0, 0, width, height);
   const sx = width / video.videoWidth;
   const sy = height / video.videoHeight;
-  ctx.lineWidth = 2;
+  const platformSelected = selection?.kind === "platform";
+  ctx.lineWidth = platformSelected ? 3.5 : 2;
   if (arena.platformCenterPx && arena.platformRadiusPx) {
-    ctx.strokeStyle = "#1f4d5c";
+    ctx.strokeStyle = platformSelected ? "#0b3a46" : "#1f4d5c";
     ctx.beginPath();
     ctx.arc(arena.platformCenterPx.x * sx, arena.platformCenterPx.y * sy, arena.platformRadiusPx * sx, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.fillStyle = "#1f4d5c";
+    ctx.fillStyle = platformSelected ? "#0b3a46" : "#1f4d5c";
     ctx.beginPath();
-    ctx.arc(arena.platformCenterPx.x * sx, arena.platformCenterPx.y * sy, 4, 0, Math.PI * 2);
+    ctx.arc(arena.platformCenterPx.x * sx, arena.platformCenterPx.y * sy, platformSelected ? 6 : 4, 0, Math.PI * 2);
     ctx.fill();
   }
   arena.holeCentersPx?.forEach((hole, index) => {
     const isTarget = index === arena.targetHoleIndex;
+    const isSelected = selection?.kind === "hole" && selection.index === index;
+    ctx.lineWidth = isSelected ? 3 : 2;
     ctx.strokeStyle = isTarget ? "#6b2d2d" : "#3d2a78";
-    ctx.setLineDash(isTarget ? [] : [4, 3]);
+    ctx.setLineDash(isTarget || isSelected ? [] : [4, 3]);
     ctx.beginPath();
     ctx.arc(hole.x * sx, hole.y * sy, (arena.holeRadiusPx ?? 8) * sx, 0, Math.PI * 2);
     ctx.stroke();
@@ -72,7 +78,10 @@ export function ArenaPage() {
   const [step, setStep] = useState<SetupStep>(trial?.arena ? "adjust" : "platform-center");
   const [draftCenter, setDraftCenter] = useState<Point | undefined>(trial?.arena?.platformCenterPx);
   const [draftEdge, setDraftEdge] = useState<Point | undefined>();
-  const [selectedHole, setSelectedHole] = useState(trial?.arena?.targetHoleIndex ?? 0);
+  const [selection, setSelection] = useState<ArenaSelection>({
+    kind: "hole",
+    index: trial?.arena?.targetHoleIndex ?? 0,
+  });
   const [nudge, setNudge] = useState(2);
   const url = trial ? getVideoUrl(trial.id) : undefined;
   const donor = session.trials.find((item) => item.id !== trial?.id && item.arena);
@@ -92,7 +101,7 @@ export function ArenaPage() {
         platformCenterPx: draftCenter,
         platformRadiusPx: draftCenter && draftEdge ? distance(draftCenter, draftEdge) : undefined,
       };
-      drawArena(ctx, current, video);
+      drawArena(ctx, current, video, arena ? selection : undefined);
     };
     video.addEventListener("loadeddata", sync);
     window.addEventListener("resize", sync);
@@ -101,7 +110,7 @@ export function ArenaPage() {
       video.removeEventListener("loadeddata", sync);
       window.removeEventListener("resize", sync);
     };
-  }, [arena, draftCenter, draftEdge, url]);
+  }, [arena, draftCenter, draftEdge, url, selection]);
 
   const toVideoPoint = (event: React.MouseEvent<HTMLCanvasElement>): Point | null => {
     const video = videoRef.current;
@@ -148,16 +157,35 @@ export function ArenaPage() {
           nearest = index;
         }
       });
-      if (best < 28) setSelectedHole(nearest);
+      const toCenter = distance(point, arena.platformCenterPx);
+      const rimDistance = Math.abs(toCenter - arena.platformRadiusPx);
+      const holeHit = best < Math.max(28, arena.holeRadiusPx + 8);
+      const platformCenterHit = toCenter < 18;
+      const platformRimHit = rimDistance < 14;
+      if (holeHit && !platformCenterHit) {
+        setSelection({ kind: "hole", index: nearest });
+        return;
+      }
+      if (platformCenterHit || platformRimHit) {
+        setSelection({ kind: "platform" });
+        return;
+      }
+      if (holeHit) setSelection({ kind: "hole", index: nearest });
     }
   };
 
   const moveSelected = (dx: number, dy: number) => {
     if (!trial?.arena) return;
+    if (selection.kind === "platform") {
+      setArena(trial.id, nudgePlatformCenter(trial.arena, dx, dy));
+      return;
+    }
     const holes = trial.arena.holeCentersPx.map((hole, index) =>
-      index === selectedHole ? { x: hole.x + dx, y: hole.y + dy } : hole,
+      index === selection.index ? { x: hole.x + dx, y: hole.y + dy } : hole,
     );
-    const sources = trial.arena.holeSources?.map((source, index) => (index === selectedHole ? "manual" : source));
+    const sources = trial.arena.holeSources?.map((source, index) =>
+      index === selection.index ? "manual" : source,
+    );
     setArena(trial.id, { ...trial.arena, holeCentersPx: holes, holeSources: sources, geometrySource: "manual" });
   };
 
@@ -262,7 +290,8 @@ export function ArenaPage() {
             {step === "platform-center" && "Click the platform center."}
             {step === "platform-edge" && "Click a point on the platform edge."}
             {step === "first-hole" && "Click the center of one clearly visible hole. The other 19 are generated at 18°."}
-            {step === "adjust" && "Select a hole, then nudge it with buttons or arrow keys."}
+            {step === "adjust" &&
+              "Click the platform circle or a hole, then nudge with buttons or arrow keys."}
           </p>
           {url ? (
             <div className="canvas-wrap">
@@ -272,7 +301,7 @@ export function ArenaPage() {
                 className="overlay-canvas"
                 onClick={onCanvasClick}
                 role="img"
-                aria-label="Arena overlay. Click to place platform or holes. Arrow keys nudge the selected hole."
+                aria-label="Arena overlay. Click to place platform or holes. Arrow keys nudge the selected platform or hole."
               />
             </div>
           ) : (
@@ -457,7 +486,20 @@ export function ArenaPage() {
                     Scale ring −
                   </button>
                 </div>
-                <h3>Selected hole {selectedHole + 1}</h3>
+                <h3>
+                  {selection.kind === "platform"
+                    ? "Selected platform"
+                    : `Selected hole ${selection.index + 1}`}
+                </h3>
+                <div className="row">
+                  <button
+                    type="button"
+                    className={selection.kind === "platform" ? "btn" : "btn-secondary"}
+                    onClick={() => setSelection({ kind: "platform" })}
+                  >
+                    Select platform
+                  </button>
+                </div>
                 <Field label="Nudge step (px)">
                   <input type="number" value={nudge} min={1} onChange={(event) => setNudge(Number(event.target.value))} />
                 </Field>
@@ -476,7 +518,11 @@ export function ArenaPage() {
                   </button>
                 </div>
                 <p className="help">
-                  Arrow keys also nudge the selected hole. Hole sources:{" "}
+                  Arrow keys also nudge the selected {selection.kind === "platform" ? "platform circle" : "hole"}.
+                  {selection.kind === "platform"
+                    ? " This slides the platform overlay; holes stay where they are. Use Platform radius to grow or shrink the rim."
+                    : ""}{" "}
+                  Hole sources:{" "}
                   {arena.holeSources?.filter((item) => item === "predicted").length ?? 0} predicted,{" "}
                   {arena.holeSources?.filter((item) => item === "refined").length ?? 0} refined,{" "}
                   {arena.holeSources?.filter((item) => item === "manual").length ?? 0} manual.

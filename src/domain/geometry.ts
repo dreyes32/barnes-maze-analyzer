@@ -137,6 +137,18 @@ export function transformArena(
   };
 }
 
+/** Slide the platform circle without moving hole centers. */
+export function nudgePlatformCenter(arena: ArenaGeometry, dx: number, dy: number): ArenaGeometry {
+  return {
+    ...arena,
+    platformCenterPx: {
+      x: arena.platformCenterPx.x + dx,
+      y: arena.platformCenterPx.y + dy,
+    },
+    geometrySource: "manual",
+  };
+}
+
 export function copyArena(arena: ArenaGeometry, geometrySource: ArenaGeometry["geometrySource"] = "reused"): ArenaGeometry {
   return {
     ...structuredClone(arena),

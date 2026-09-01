@@ -48,4 +48,21 @@ describe("mp4 metadata", () => {
     expect(parsed.timebase.fps).not.toBe(30);
     expect(parsed.frameCount).toBe(100);
   });
+
+  it("reads timing from the vide track when an audio track is listed first", () => {
+    const hdlr = (type: string) =>
+      box(
+        "hdlr",
+        concat(new Uint8Array(4), new Uint8Array(4), Uint8Array.from(type.split("").map((ch) => ch.charCodeAt(0))), new Uint8Array(12)),
+      );
+    const audioMdhd = box("mdhd", concat(new Uint8Array(4), u32(0), u32(0), u32(48000), u32(48000)));
+    const audioStts = box("stts", concat(u32(0), u32(1), u32(48000), u32(1024)));
+    const audioTrak = box("trak", box("mdia", concat(hdlr("soun"), audioMdhd, box("minf", box("stbl", audioStts)))));
+    const videoMdhd = box("mdhd", concat(new Uint8Array(4), u32(0), u32(0), u32(15000), u32(15000)));
+    const videoStts = box("stts", concat(u32(0), u32(1), u32(100), u32(1001)));
+    const videoTrak = box("trak", box("mdia", concat(hdlr("vide"), videoMdhd, box("minf", box("stbl", videoStts)))));
+    const parsed = parseMp4Timebase(box("moov", concat(audioTrak, videoTrak)).buffer);
+    expect(parsed.timebase.fps).toBeCloseTo(15000 / 1001);
+    expect(parsed.frameCount).toBe(100);
+  });
 });

@@ -2,6 +2,7 @@ import { DEFAULT_PARAMETERS, cloneParameters } from "../domain/defaults";
 import { createAssistedArena } from "../domain/geometry";
 import { createId, nowIso } from "../domain/ids";
 import { recomputeTrial } from "../domain/pipeline";
+import { buildTrackingProvenance } from "../domain/trackingProvenance";
 import { SCHEMA_VERSION, type AnalysisSession, type Point, type TrackingSample, type TrialRecord } from "../domain/types";
 
 function arenaFor(width = 640, height = 480) {
@@ -22,7 +23,7 @@ function arenaFor(width = 640, height = 480) {
 function walk(points: Point[], start: number, dt: number, status: TrackingSample["status"][] = []): TrackingSample[] {
   return points.map((point, index) => ({
     timestampSeconds: start + index * dt,
-    frameIndex: index,
+    analysisSampleIndex: index,
     body: status[index] === "failed" || status[index] === "hidden" ? undefined : point,
     confidence: status[index] === "failed" ? 0 : 0.86,
     status: status[index] ?? "tracked",
@@ -75,6 +76,8 @@ function trialFromPath(
       analysisSamplingHz: 12,
       startedAt: nowIso(),
       finishedAt: nowIso(),
+      status: "ready",
+      provenance: buildTrackingProvenance(DEFAULT_PARAMETERS, arena),
     },
     corrections: [],
     events: [],

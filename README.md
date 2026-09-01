@@ -79,6 +79,8 @@ For each trial the app:
 
 If the tracker cannot support a location, the observation is `failed` or `low-confidence`. Long gaps stay empty unless you explicitly enable short-gap interpolation.
 
+Changing **sampling rate or tracking/CV settings** (or platform/hole geometry used by the mask) does not rewrite existing `rawSamples`. Tracking is marked **stale** until you re-run it. Cleanup, event, strategy, target-hole, and platform-diameter changes recompute immediately from the stored run. Exports label **tracking parameters used** separately from **pending** tracking settings.
+
 ## Behavioral definitions
 
 These are the defaults. All of them are visible and editable in **Method / Analysis settings**.
@@ -95,7 +97,7 @@ These are the defaults. All of them are visible and editable in **Method / Analy
 | **Path length** | Sum of effective body steps that do not cross a failed/hidden gap, converted with platform diameter. Unavailable in cm until diameter is entered. |
 | **Speed** | **Mean** is time-weighted: valid path length / valid tracked duration. **Median** is the median of instantaneous segment speeds (step distance / real timestamp delta). Not `pixels × assumed fps`. |
 | **Target quadrant** | 90° sector centered on the target-hole direction. Reported in seconds and as a percent of valid tracked time. |
-| **Strategy** | Transparent rules: spatial (few primary errors, efficient path), serial (adjacent hole transitions + perimeter occupancy), otherwise random. Hole 20 → 1 is adjacent. Reasoning reports the actual chronological transition counts, including revisits. The reviewer can override; both labels are exported. |
+| **Strategy** | Search strategy is classified from behavior up to the first valid target investigation. If no target investigation occurs, the available trial trajectory is used. Transparent rules: spatial (few primary errors, efficient path), serial (adjacent hole transitions + perimeter occupancy), otherwise random. Hole 20 → 1 is adjacent. Reasoning reports the actual chronological transition counts, including revisits. The reviewer can override; both labels are exported. |
 
 ## Human corrections
 
@@ -103,7 +105,11 @@ A correction is a separate record: timestamp, kind, previous value, new value. T
 
 ## Data format
 
-`<session-name>.barnes.json` contains schema version, app version, video fingerprints, metadata, arena geometry, tracking, corrections, events, parameters, metrics, strategy, and QC. Re-opening it restores analysis without retracking. Visual review still needs the original video relinked.
+`<session-name>.barnes.json` contains schema version, app version, video fingerprints, metadata, arena geometry, tracking (including optional provenance and stale status), corrections, events, parameters, metrics, strategy, and QC. Re-opening it restores analysis without retracking. Visual review still needs the original video relinked.
+
+Tracking points use **timestamp** as the scientific time. `analysis_sample_index` is the analysis-loop observation index, not a source video frame. `source_frame_index` is exported only when it is genuinely known. Older files may still contain `frameIndex`; that value is treated as the analysis sample index.
+
+QC reports **automatic tracking coverage** (raw tracker observations with a body) and **effective trajectory coverage** (usable points after interpolation and manual corrections). The legacy `trackingCoveragePercent` field is the effective value.
 
 ## What leaves the user's machine
 
@@ -141,6 +147,8 @@ Sample-video validation is documented under Known limitations; full-video CV is 
 - **Automatic platform suggestion can undershoot if it treats the largest bright blob as the maze** (a center hotspot or a wall). The estimator was changed to radial brightness falloff from near the image center after `test53` came out with radius ~89 px. The suggestion is still a suggestion; drag / numeric edit remains required.
 - **`examples/outputs` from the three Salk clips (same tracker as the app):** `test50` 97.3% coverage, 31 events, primary latency 93.8 s (target hole 6); `test51` 100% coverage, 12 events, primary latency 36.0 s (target hole 20); `test53` 83.4% coverage, 3 events, primary latency 24.9 s (target hole 3). Target holes were selected manually during arena configuration, as intended by the workflow. The software does not attempt to infer experimental target identity. `test51` coverage near 100% can include intervals where a hole-sized blob was still selected; those should be reviewed, not trusted as continuous visibility. `test53` coverage around 83% is an honest miss rate, not a defect to hide.
 - **`test51` file timing:** `test51.mp4` uses a nominal frame rate of `15000/1001 ≈ 14.985 fps`. The analyzer does not assume integer FPS; browser analysis uses source media timestamps for timing calculations. An `mdhd` timescale of `15000` is not itself the frame rate. Duration/frame-count averages and OpenCV `CAP_PROP_FPS` can look like ~15.005 because of leftover `stts` samples; that derived average is not the video's frame rate.
+- **MP4 metadata probing reads the source file into memory** so `moov` can be parsed even when it is not at the start of the file. That is acceptable for the supplied take-home clips. Very large recordings would need streaming/chunked atom parsing.
+- **Coverage numbers in older write-ups** that say only “tracking coverage” are the effective trajectory after cleanup. Automatic vs effective are now reported separately.
 
 ### Deliberately excluded scope
 

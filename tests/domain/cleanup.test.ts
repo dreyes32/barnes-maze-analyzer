@@ -58,6 +58,45 @@ describe("cleanup", () => {
     expect(effective[1].body).toEqual({ x: 8, y: 9 });
   });
 
+  it("rejects consecutive implausible spikes without letting one shield the next", () => {
+    const samples = [
+      ...Array.from({ length: 12 }, (_, i) => sample(i * 0.1, { x: i, y: 0 })),
+      sample(1.2, { x: 800, y: 0 }),
+      sample(1.3, { x: 1600, y: 0 }),
+      sample(1.4, { x: 12, y: 0 }),
+    ];
+    const cleaned = applyCleanup(samples, {
+      gapFill: "none",
+      maxGapSeconds: 0.25,
+      smoothing: "none",
+      smoothingWindow: 5,
+      outlierRule: "robust-speed",
+      outlierMultiplier: 6,
+    });
+    expect(cleaned.samples[12].status).toBe("failed");
+    expect(cleaned.samples[13].status).toBe("failed");
+    expect(cleaned.samples[14].body).toEqual({ x: 12, y: 0 });
+    expect(cleaned.outlierCount).toBe(2);
+  });
+
+  it("rejects a single implausible spike between normal points", () => {
+    const samples = [
+      ...Array.from({ length: 12 }, (_, i) => sample(i * 0.1, { x: i, y: 0 })),
+      sample(1.2, { x: 900, y: 0 }),
+      sample(1.3, { x: 13, y: 0 }),
+    ];
+    const cleaned = applyCleanup(samples, {
+      gapFill: "none",
+      maxGapSeconds: 0.25,
+      smoothing: "none",
+      smoothingWindow: 5,
+      outlierRule: "robust-speed",
+      outlierMultiplier: 6,
+    });
+    expect(cleaned.samples[12].status).toBe("failed");
+    expect(cleaned.samples[13].body).toEqual({ x: 13, y: 0 });
+  });
+
   it("inserts a source-frame correction at its actual timestamp", () => {
     const raw = [sample(0, { x: 1, y: 1 }), sample(0.1, { x: 2, y: 2 })];
     const effective = applyManualCorrections(raw, [

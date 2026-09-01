@@ -93,7 +93,12 @@ export type TrackingDiagnostics = {
 
 export type TrackingSample = {
   timestampSeconds: number;
+  /** @deprecated Legacy analysis-loop index. Prefer analysisSampleIndex. */
   frameIndex?: number;
+  /** Index in the analysis sampling loop. Not a source video frame number. */
+  analysisSampleIndex?: number;
+  /** Source video frame if genuinely known. Absent for typical HTML-video seeks. */
+  sourceFrameIndex?: number;
   body?: Point;
   head?: Point;
   confidence: number;
@@ -103,6 +108,8 @@ export type TrackingSample = {
   diagnostics?: TrackingDiagnostics;
 };
 
+export type TrackingRunStatus = "ready" | "stale";
+
 export type TrackingResult = {
   rawSamples: TrackingSample[];
   effectiveSamples: TrackingSample[];
@@ -110,6 +117,9 @@ export type TrackingResult = {
   startedAt: string;
   finishedAt: string;
   cancelled?: boolean;
+  /** Missing on older files: treat as ready. */
+  status?: TrackingRunStatus;
+  provenance?: TrackingProvenance;
 };
 
 export type CorrectionKind =
@@ -234,6 +244,19 @@ export type AnalysisParameters = {
   strategy: StrategyParameters;
 };
 
+export type TrackingProvenance = {
+  sampling: SamplingParameters;
+  tracking: TrackingParameters;
+  arenaSnapshot: {
+    platformCenterPx: Point;
+    platformRadiusPx: number;
+    holeCentersPx?: Point[];
+    holeRadiusPx?: number;
+  };
+  createdAt: string;
+  configHash?: string;
+};
+
 export type QCSummary = {
   observationsAttempted: number;
   tracked: number;
@@ -244,6 +267,8 @@ export type QCSummary = {
   manual: number;
   largestMissingIntervalSeconds: number;
   trackingCoveragePercent: number;
+  automaticTrackingCoveragePercent?: number;
+  effectiveTrajectoryCoveragePercent?: number;
   warnings: string[];
 };
 

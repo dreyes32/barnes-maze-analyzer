@@ -1,4 +1,4 @@
-import { createId } from "./ids";
+import { autoEventId } from "./ids";
 import {
   distance,
   investigationRadiusPx,
@@ -134,8 +134,7 @@ export function detectHoleInvestigations(
     }))
     .filter((visit) => visit.duration >= parameters.minInvestigationSeconds);
 
-  const events: BehavioralEvent[] = visits.map((visit) => ({
-    id: createId("evt"),
+  const draft = visits.map((visit) => ({
     type: investigationTypeForHole(visit.holeIndex, arena.targetHoleIndex),
     holeIndex: visit.holeIndex,
     startSeconds: visit.startSeconds,
@@ -143,21 +142,29 @@ export function detectHoleInvestigations(
     durationSeconds: visit.duration,
     confidence: visit.confidence,
     evidence: [...visit.evidence],
-    source: "automatic",
+    source: "automatic" as const,
   }));
 
-  const firstTarget = events.find((event) => event.type === "target-investigation");
+  const firstTarget = draft.find((event) => event.type === "target-investigation");
   if (firstTarget) {
     firstTarget.evidence = [...firstTarget.evidence, "first valid investigation of the target hole"];
   } else {
-    events
+    draft
       .filter((event) => event.holeIndex === arena.targetHoleIndex)
       .forEach((event) => {
         event.type = "target-investigation";
       });
   }
 
-  return events;
+  return draft.map((event) => ({
+    ...event,
+    id: autoEventId({
+      type: event.type,
+      holeIndex: event.holeIndex,
+      startSeconds: event.startSeconds,
+      endSeconds: event.endSeconds,
+    }),
+  }));
 }
 
 export function investigationTypeForHole(
@@ -253,12 +260,19 @@ export function inferEscapeEntry(
 
     const confidence = nearTarget && visitedTargetRecently && towardTarget ? 0.72 : 0.48;
 
+    const startSeconds = samples[start].timestampSeconds;
+    const endSeconds = samples[end].timestampSeconds;
     return {
-      id: createId("esc"),
+      id: autoEventId({
+        type: "escape-entry",
+        holeIndex: arena.targetHoleIndex,
+        startSeconds,
+        endSeconds,
+      }),
       type: "escape-entry",
       holeIndex: arena.targetHoleIndex,
-      startSeconds: samples[start].timestampSeconds,
-      endSeconds: samples[end].timestampSeconds,
+      startSeconds,
+      endSeconds,
       durationSeconds: duration,
       confidence,
       evidence,

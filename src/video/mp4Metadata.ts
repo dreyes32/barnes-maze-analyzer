@@ -58,6 +58,30 @@ function findBoxes(bytes: Uint8Array, types: string[], start = 0, end = bytes.le
   return found;
 }
 
+function handlerType(bytes: Uint8Array, hdlr: Box): string {
+  return readType(bytes, hdlr.contentStart + 8);
+}
+
+function selectVideoTrackBoxes(bytes: Uint8Array): {
+  mdhd?: Box;
+  stts?: Box;
+  tkhd?: Box;
+} {
+  const tracks = findBoxes(bytes, ["trak"]);
+  const parsed = tracks.map((trak) => {
+    const end = trak.start + trak.size;
+    const hdlr = findBoxes(bytes, ["hdlr"], trak.contentStart, end)[0];
+    return {
+      handler: hdlr ? handlerType(bytes, hdlr) : undefined,
+      mdhd: findBoxes(bytes, ["mdhd"], trak.contentStart, end)[0],
+      stts: findBoxes(bytes, ["stts"], trak.contentStart, end)[0],
+      tkhd: findBoxes(bytes, ["tkhd"], trak.contentStart, end)[0],
+    };
+  });
+  const video = parsed.find((track) => track.handler === "vide") ?? parsed[0];
+  return video ?? {};
+}
+
 export function parseMp4Timebase(buffer: ArrayBuffer): {
   timebase: Timebase;
   durationSeconds: number;
@@ -67,10 +91,11 @@ export function parseMp4Timebase(buffer: ArrayBuffer): {
 } {
   const bytes = new Uint8Array(buffer);
   const view = new DataView(buffer);
-  const mdhdBoxes = findBoxes(bytes, ["mdhd"]);
+  const track = selectVideoTrackBoxes(bytes);
+  const mdhdBoxes = track.mdhd ? [track.mdhd] : findBoxes(bytes, ["mdhd"]);
   const mvhdBoxes = findBoxes(bytes, ["mvhd"]);
-  const sttsBoxes = findBoxes(bytes, ["stts"]);
-  const tkhdBoxes = findBoxes(bytes, ["tkhd"]);
+  const sttsBoxes = track.stts ? [track.stts] : findBoxes(bytes, ["stts"]);
+  const tkhdBoxes = track.tkhd ? [track.tkhd] : findBoxes(bytes, ["tkhd"]);
 
   const parseHd = (box: Box) => {
     const version = bytes[box.contentStart];

@@ -129,13 +129,20 @@ export function rejectOutliers(samples: TrackingSample[], multiplier: number): {
   const limit = center + multiplier * 1.4826 * mad;
   let affectedCount = 0;
   const result = samples.map(cloneSample);
-  for (let i = 1; i < result.length; i += 1) {
-    const prev = result[i - 1];
+  let lastAccepted: TrackingSample | undefined;
+  for (let i = 0; i < result.length; i += 1) {
     const curr = result[i];
-    if (isManual(curr) || !prev.body || !curr.body) continue;
-    const dt = curr.timestampSeconds - prev.timestampSeconds;
-    if (dt <= 0) continue;
-    const speed = distance(prev.body, curr.body) / dt;
+    if (!curr.body) continue;
+    if (!lastAccepted?.body || isManual(curr)) {
+      lastAccepted = curr;
+      continue;
+    }
+    const dt = curr.timestampSeconds - lastAccepted.timestampSeconds;
+    if (dt <= 0) {
+      lastAccepted = curr;
+      continue;
+    }
+    const speed = distance(lastAccepted.body, curr.body) / dt;
     if (speed > limit && curr.source === "automatic") {
       result[i] = {
         ...curr,
@@ -144,11 +151,13 @@ export function rejectOutliers(samples: TrackingSample[], multiplier: number): {
         status: "failed",
         confidence: Math.min(curr.confidence, 0.2),
         diagnostics: curr.diagnostics
-          ? { ...curr.diagnostics, displacementPx: distance(prev.body, curr.body) }
+          ? { ...curr.diagnostics, displacementPx: distance(lastAccepted.body, curr.body) }
           : undefined,
       };
       affectedCount += 1;
+      continue;
     }
+    lastAccepted = result[i];
   }
   return { samples: result, affectedCount };
 }

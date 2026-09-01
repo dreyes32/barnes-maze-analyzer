@@ -1,4 +1,5 @@
 import { nowIso } from "../domain/ids";
+import { buildTrackingProvenance } from "../domain/trackingProvenance";
 import type { AnalysisParameters, ArenaGeometry, TrackingResult, TrackingSample } from "../domain/types";
 import { captureVideoFrame, sampleDistributedTimes, seekVideo } from "./frameCapture";
 import { TrackerClient, type TrackingProgress } from "../workers/trackerClient";
@@ -71,7 +72,7 @@ export async function runTrackingOnVideo(options: {
         width: frame.width,
         height: frame.height,
         timestampSeconds: mediaTime,
-        frameIndex: index,
+        analysisSampleIndex: index,
       });
       samples.push(sample);
       onProgress?.({
@@ -89,6 +90,8 @@ export async function runTrackingOnVideo(options: {
       analysisSamplingHz: targetHz,
       startedAt,
       finishedAt: nowIso(),
+      status: "ready",
+      provenance: buildTrackingProvenance(parameters, arena, startedAt),
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
@@ -99,6 +102,8 @@ export async function runTrackingOnVideo(options: {
         startedAt,
         finishedAt: nowIso(),
         cancelled: true,
+        status: "ready",
+        provenance: buildTrackingProvenance(parameters, arena, startedAt),
       };
     }
     throw error;

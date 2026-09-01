@@ -1,3 +1,4 @@
+import { analysisSampleIndexOf, sourceFrameIndexOf } from "../domain/trackingProvenance";
 import type { AnalysisSession, BehavioralEvent, TrackingSample, TrialRecord } from "../domain/types";
 
 export const TRIAL_SUMMARY_COLUMNS = [
@@ -18,6 +19,8 @@ export const TRIAL_SUMMARY_COLUMNS = [
   "automatic_strategy",
   "final_strategy",
   "tracking_coverage_percent",
+  "automatic_tracking_coverage_percent",
+  "effective_trajectory_coverage_percent",
   "manual_correction_count",
   "review_status",
 ] as const;
@@ -53,7 +56,13 @@ export function trialSummaryRow(trial: TrialRecord): Record<(typeof TRIAL_SUMMAR
     target_quadrant_percent: missingNumber(trial.metrics?.targetQuadrantPercent),
     automatic_strategy: trial.strategy?.automatic ?? NA,
     final_strategy: trial.strategy?.effective ?? NA,
-    tracking_coverage_percent: missingNumber(trial.qc?.trackingCoveragePercent),
+    tracking_coverage_percent: missingNumber(
+      trial.qc?.effectiveTrajectoryCoveragePercent ?? trial.qc?.trackingCoveragePercent,
+    ),
+    automatic_tracking_coverage_percent: missingNumber(trial.qc?.automaticTrackingCoveragePercent),
+    effective_trajectory_coverage_percent: missingNumber(
+      trial.qc?.effectiveTrajectoryCoveragePercent ?? trial.qc?.trackingCoveragePercent,
+    ),
     manual_correction_count: String(
       trial.corrections.filter((item) =>
         ["body-position", "head-position", "hidden-in-hole", "tracking-failure"].includes(item.kind),
@@ -114,7 +123,8 @@ export function trackingPointsCsv(session: AnalysisSession): string {
   const headers = [
     "source_file",
     "timestamp_s",
-    "frame_index",
+    "analysis_sample_index",
+    "source_frame_index",
     "body_x_px",
     "body_y_px",
     "head_x_px",
@@ -127,7 +137,9 @@ export function trackingPointsCsv(session: AnalysisSession): string {
     (trial.tracking?.effectiveSamples ?? []).map((sample: TrackingSample) => ({
       source_file: trial.source.fileName,
       timestamp_s: sample.timestampSeconds.toFixed(4),
-      frame_index: sample.frameIndex === undefined ? "" : String(sample.frameIndex),
+      analysis_sample_index:
+        analysisSampleIndexOf(sample) === undefined ? "" : String(analysisSampleIndexOf(sample)),
+      source_frame_index: sourceFrameIndexOf(sample) === undefined ? "" : String(sourceFrameIndexOf(sample)),
       body_x_px: sample.body ? sample.body.x.toFixed(2) : "",
       body_y_px: sample.body ? sample.body.y.toFixed(2) : "",
       head_x_px: sample.head ? sample.head.x.toFixed(2) : "",

@@ -46,7 +46,7 @@ metrics
 strategy
 ```
 
-A parameter change or correction recomputes from the affected layer downward. Raw automatic samples are retained for provenance.
+A downstream parameter change or correction recomputes from the affected layer downward. Raw automatic samples are retained for provenance. Changing sampling or tracking/CV settings, or arena geometry used by the tracker, marks tracking **stale** until the researcher re-runs tracking. Search strategy features use the pre-target epoch (trial start → first valid target investigation).
 
 ## Module map
 
