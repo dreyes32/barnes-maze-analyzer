@@ -13,6 +13,7 @@ export function createEmptySession(name = "Untitled session"): AnalysisSession {
     updatedAt: createdAt,
     parameters: cloneParameters(DEFAULT_PARAMETERS),
     trials: [],
+    trialGroups: [],
     currentStage: "videos",
   };
 }
@@ -42,7 +43,7 @@ export function reviewStatusLabel(status: TrialRecord["reviewStatus"]): string {
     case "not-configured":
       return "Not configured";
     case "arena-ready":
-      return "Arena ready";
+      return "Arena setup";
     case "tracking":
       return "Tracking";
     case "needs-review":
@@ -54,4 +55,43 @@ export function reviewStatusLabel(status: TrialRecord["reviewStatus"]): string {
     default:
       return status;
   }
+}
+
+export function reviewStatusMark(status: TrialRecord["reviewStatus"]): string {
+  switch (status) {
+    case "not-configured":
+      return "○";
+    case "arena-ready":
+      return "◐";
+    case "tracking":
+      return "◉";
+    case "needs-review":
+      return "!";
+    case "reviewed":
+    case "complete":
+      return "✓";
+    default:
+      return "○";
+  }
+}
+
+export function formatClockDuration(seconds?: number): string {
+  if (seconds === undefined || !Number.isFinite(seconds)) return "—";
+  const total = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
+  return `${minutes}:${String(rest).padStart(2, "0")}`;
+}
+
+export function removeTrialFromSession(session: AnalysisSession, trialId: string): AnalysisSession {
+  const trials = session.trials.filter((trial) => trial.id !== trialId);
+  return {
+    ...session,
+    trials,
+    currentTrialId: session.currentTrialId === trialId ? trials[0]?.id : session.currentTrialId,
+  };
+}
+
+export function createTrialGroup(name: string): import("./types").TrialGroup {
+  return { id: createId("group"), name: name.trim() || "Untitled group", collapsed: false };
 }

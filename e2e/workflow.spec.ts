@@ -52,7 +52,37 @@ test("keyboard navigation and 200% zoom remain usable", async ({ page }) => {
   await page.keyboard.press("Enter");
   await expect(page.getByText("Example analysis", { exact: true })).toBeVisible();
   await workflowStep(page, "Videos").press("Enter");
-  await expect(page.getByRole("heading", { name: "Videos" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Videos", exact: true })).toBeVisible();
+});
+
+test("trial removal persists after reload", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Load demo analysis" }).click();
+  await expect(page.getByText("Example analysis", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Trial actions for test53.mp4" }).click();
+  await page.getByRole("menuitem", { name: "Remove from session" }).click();
+  await expect(page.getByRole("heading", { name: /Remove test53\.mp4 from this session/ })).toBeVisible();
+  await page.getByRole("button", { name: "Remove trial" }).click();
+  await expect(page.getByRole("button", { name: "Trial actions for test53.mp4" })).toHaveCount(0);
+  await expect(page.getByText("✓ Saved locally")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Example analysis", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Trial actions for test53.mp4" })).toHaveCount(0);
+  await expect(page.getByText("test50.mp4").first()).toBeVisible();
+});
+
+test("trial groups persist after reload", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Load demo analysis" }).click();
+  page.once("dialog", (dialog) => void dialog.accept("Day 1"));
+  await page.getByRole("button", { name: "Add to session" }).click();
+  await page.getByRole("menuitem", { name: "New group" }).click();
+  await expect(page.getByRole("button", { name: /Day 1/ })).toBeVisible();
+  await page.getByRole("button", { name: "Trial actions for test50.mp4" }).click();
+  await page.getByRole("menuitem", { name: "Move to Day 1" }).click();
+  await expect(page.getByText("✓ Saved locally")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("button", { name: /Day 1/ })).toBeVisible();
 });
 
 test("no major axe violations on demo results", async ({ page }) => {

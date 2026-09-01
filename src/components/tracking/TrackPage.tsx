@@ -1,9 +1,33 @@
 import { useRef, useState } from "react";
+import { buildReviewIssues } from "../../domain/qc";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
 import { runTrackingOnVideo } from "../../video/runTracking";
-import { Banner, MetricCard } from "../ui";
+import { Banner, MetricCard, PageHeader, WorkspaceFooter } from "../ui";
 import { MethodPanel } from "../method/MethodPanel";
+
+function JobStep({
+  label,
+  state,
+  detail,
+}: {
+  label: string;
+  state: "done" | "active" | "waiting";
+  detail?: string;
+}) {
+  const mark = state === "done" ? "✓" : state === "active" ? "●" : "○";
+  return (
+    <li className={`job-step job-step-${state}`}>
+      <span className="status-mark" aria-hidden="true">
+        {mark}
+      </span>
+      <span>
+        {label}
+        {detail ? <span className="help"> {detail}</span> : null}
+      </span>
+    </li>
+  );
+}
 
 export function TrackPage() {
   const session = useSessionStore((state) => state.session);
@@ -46,13 +70,42 @@ export function TrackPage() {
     }
   };
 
-  if (!trial) return <Banner kind="info">Import a video first.</Banner>;
-  if (!trial.arena) return <Banner kind="warn">Set the arena before tracking.</Banner>;
+  if (!trial) {
+    return (
+      <section className="empty-state">
+        <h2>Track</h2>
+        <p className="help">Import a video first.</p>
+      </section>
+    );
+  }
+  if (!trial.arena) {
+    return (
+      <section className="empty-state">
+        <h2>Track</h2>
+        <p className="help">Configure the arena, then start tracking.</p>
+        <button type="button" className="btn" onClick={() => setStage("arena")}>
+          Continue to Arena →
+        </button>
+      </section>
+    );
+  }
+
+  const runningThis = tracking.running && tracking.trialId === trial.id;
+  const percent = tracking.total ? Math.round((tracking.current / tracking.total) * 100) : 0;
+  const issues = trial.tracking ? buildReviewIssues(trial) : [];
 
   return (
     <>
+      <PageHeader title="Track">
+        <p>
+          {runningThis
+            ? `Tracking ${trial.source.fileName}`
+            : trial.tracking
+              ? `Tracking complete for ${trial.source.fileName}`
+              : `Run animal tracking on ${trial.source.fileName}`}
+        </p>
+      </PageHeader>
       <section className="card">
-        <h2>Track animal</h2>
         <p className="help">
           Background subtraction inside the platform, then a thick-core body location so the tail does not
           dominate. Failures stay failed unless you enable short-gap interpolation in Method settings.
@@ -64,35 +117,65 @@ export function TrackPage() {
           Analysis sampling: {session.parameters.sampling.targetObservationsPerSecond} observations/s (source{" "}
           {trial.source.fps ? `${trial.source.fps.toFixed(3)} fps` : "timebase from media timestamps"}).
         </p>
-        <div className="row">
-          <button type="button" className="btn" onClick={() => void start()} disabled={tracking.running || !url}>
-            {trial.tracking ? "Re-run tracking" : "Run tracking"}
-          </button>
-          <button
-            type="button"
-            className="btn-danger"
-            disabled={!tracking.running}
-            onClick={() => abortRef.current?.abort()}
-          >
-            Cancel
-          </button>
-          {trial.tracking ? (
-            <button type="button" className="btn-secondary" onClick={() => setStage("review")}>
-              Review tracking
+
+        {runningThis ? (
+          <div className="panel" style={{ marginTop: 16 }}>
+            <ol className="setup-list">
+              <JobStep
+                label="Background estimation"
+                state={tracking.stage === "background" ? "active" : "done"}
+                detail={tracking.stage === "background" && tracking.total ? `${tracking.current} / ${tracking.total}` : undefined}
+              />
+              <JobStep
+                label="Animal tracking"
+                state={tracking.stage === "tracking" ? "active" : tracking.stage === "background" ? "waiting" : "waiting"}
+                detail={tracking.stage === "tracking" ? `${percent}%` : undefined}
+              />
+            </ol>
+            <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={tracking.total || 1} aria-valuenow={tracking.current}>
+              <span style={{ width: `${percent}%` }} />
+            </div>
+            <p className="help" style={{ marginTop: 8 }}>
+              Sample {tracking.current.toLocaleString()} / {tracking.total.toLocaleString()}
+              {tracking.timestampSeconds ? ` · ${tracking.timestampSeconds.toFixed(1)} s` : ""}
+            </p>
+            <button
+              type="button"
+              className="btn-danger"
+              onClick={() => abortRef.current?.abort()}
+            >
+              Cancel tracking
             </button>
-          ) : null}
-        </div>
-        {tracking.running ? (
-          <Banner kind="info">
-            {tracking.stage === "background" ? "Estimating background" : "Tracking"} {tracking.trialId === trial.id ? trial.source.fileName : ""}: {tracking.current} / {tracking.total} ({tracking.timestampSeconds.toFixed(1)} s)
-            <progress max={tracking.total || 1} value={tracking.current} style={{ width: "100%" }} />
-          </Banner>
-        ) : null}
+          </div>
+        ) : (
+          <div className="row">
+            <button type="button" className="btn" onClick={() => void start()} disabled={!url}>
+              {trial.tracking ? "Re-run tracking" : "Start tracking"}
+            </button>
+            {trial.tracking ? (
+              <button type="button" className="btn-secondary" onClick={() => setStage("review")}>
+                Review tracking
+              </button>
+            ) : null}
+          </div>
+        )}
         {localError ? <Banner kind="danger">{localError}</Banner> : null}
       </section>
-      {trial.qc ? (
-        <section className="card">
-          <h3>Quality</h3>
+
+      {!trial.tracking && !runningThis ? (
+        <section className="empty-state">
+          <h3>Tracking has not been run for this trial.</h3>
+          <p className="help">Configure the arena, then start tracking.</p>
+        </section>
+      ) : null}
+
+      {trial.tracking && trial.qc && !runningThis ? (
+        <section className="panel">
+          <h3>Tracking complete</h3>
+          <p>
+            {trial.qc.trackingCoveragePercent.toFixed(1)}% coverage · {trial.events.length} behavioral events ·{" "}
+            {issues.length} interval{issues.length === 1 ? "" : "s"} need review
+          </p>
           <dl className="metrics">
             <MetricCard label="Observations" value={trial.qc.observationsAttempted} />
             <MetricCard label="Tracked" value={trial.qc.tracked} />
@@ -107,6 +190,18 @@ export function TrackPage() {
           ))}
         </section>
       ) : null}
+
+      <WorkspaceFooter
+        note={
+          trial.tracking
+            ? `Tracking complete${issues.length ? ` · ${issues.length} issues` : ""}`
+            : "Start tracking to continue"
+        }
+      >
+        <button type="button" className="btn" disabled={!trial.tracking} onClick={() => setStage("review")}>
+          Continue to Review →
+        </button>
+      </WorkspaceFooter>
       <MethodPanel />
     </>
   );

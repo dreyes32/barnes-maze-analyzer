@@ -221,6 +221,13 @@ export const trialSchema = z.object({
     "complete",
   ]),
   videoRelinkRequired: z.boolean().optional(),
+  groupId: z.string().optional(),
+});
+
+export const trialGroupSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  collapsed: z.boolean().optional(),
 });
 
 export const sessionSchema = z.object({
@@ -232,6 +239,7 @@ export const sessionSchema = z.object({
   updatedAt: z.string(),
   parameters: parametersSchema,
   trials: z.array(trialSchema),
+  trialGroups: z.array(trialGroupSchema).optional(),
   currentStage: z.enum(["videos", "arena", "track", "review", "results"]),
   currentTrialId: z.string().optional(),
   isDemo: z.boolean().optional(),

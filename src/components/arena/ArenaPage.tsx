@@ -11,7 +11,7 @@ import { darkestLocalCenter, estimateBrightCircle, rgbaToGray } from "../../doma
 import type { ArenaGeometry, Point } from "../../domain/types";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
-import { Banner, Field } from "../ui";
+import { Banner, Field, PageHeader, WorkspaceFooter } from "../ui";
 
 type SetupStep = "platform-center" | "platform-edge" | "first-hole" | "adjust";
 
@@ -51,6 +51,14 @@ function drawArena(
       ctx.fillText("TARGET", hole.x * sx + 6, hole.y * sy + 14);
     }
   });
+}
+
+function StepMark({ done }: { done: boolean }) {
+  return (
+    <span className="status-mark" aria-hidden="true">
+      {done ? "✓" : "○"}
+    </span>
+  );
 }
 
 export function ArenaPage() {
@@ -227,216 +235,263 @@ export function ArenaPage() {
   }, [arena]);
 
   if (!trial) {
-    return <Banner kind="info">Import a video first.</Banner>;
+    return (
+      <section className="empty-state">
+        <h2>Arena</h2>
+        <p className="help">Import a video first.</p>
+      </section>
+    );
   }
 
-  return (
-    <div className="grid-2">
-      <section className="card">
-        <h2>Set arena</h2>
-        <p className="help">
-          {step === "platform-center" && "Click the platform center."}
-          {step === "platform-edge" && "Click a point on the platform edge."}
-          {step === "first-hole" && "Click the center of one clearly visible hole. The other 19 are generated at 18°."}
-          {step === "adjust" && "Drag is optional. Select a hole and nudge it with buttons or arrow keys."}
-        </p>
-        {url ? (
-          <div className="canvas-wrap">
-            <video ref={videoRef} src={url} muted playsInline />
-            <canvas
-              ref={canvasRef}
-              className="overlay-canvas"
-              onClick={onCanvasClick}
-              role="img"
-              aria-label="Arena overlay. Click to place platform or holes."
-            />
-          </div>
-        ) : (
-          <Banner kind="warn">
-            Relink {trial.source.fileName} to see the video. Saved geometry can still be edited from numbers.
-          </Banner>
-        )}
-        <div className="row" style={{ marginTop: "0.6rem" }}>
-          <button type="button" className="btn-secondary" onClick={suggestPlatform}>
-            Suggest platform
-          </button>
-          {arena ? (
-            <button type="button" className="btn-secondary" onClick={refineHoles}>
-              Refine holes locally
-            </button>
-          ) : null}
-        </div>
-      </section>
-      <section className="card">
-        <h3>Calibration</h3>
-        {geometryNote ? <p className="help">{geometryNote}</p> : null}
-        {donor && trial && !arena ? (
-          <Banner kind="info">
-            Reuse the arena from {donor.source.fileName}.
-            <div className="row">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  reuseArena(donor.id, trial.id, copyArena(donor.arena!, "reused"));
-                  setStep("adjust");
-                }}
-              >
-                Reuse this arena layout
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => {
-                  const video = videoRef.current;
-                  if (!video || !donor.arena) return;
-                  const canvas = document.createElement("canvas");
-                  canvas.width = video.videoWidth;
-                  canvas.height = video.videoHeight;
-                  const ctx = canvas.getContext("2d");
-                  if (!ctx) return;
-                  ctx.drawImage(video, 0, 0);
-                  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                  const gray = rgbaToGray(image.data, canvas.width, canvas.height);
-                  const circle = estimateBrightCircle(gray);
-                  if (!circle) {
-                    reuseArena(donor.id, trial.id, copyArena(donor.arena, "reused"));
-                    setStep("adjust");
-                    return;
-                  }
-                  const scale = circle.radius / donor.arena.platformRadiusPx;
-                  const registered = transformArena(donor.arena, {
-                    translationX: circle.x - donor.arena.platformCenterPx.x,
-                    translationY: circle.y - donor.arena.platformCenterPx.y,
-                    scale,
-                    rotationRadians: 0,
-                  });
-                  reuseArena(donor.id, trial.id, { ...registered, geometrySource: "registered" });
-                  setStep("adjust");
-                }}
-              >
-                Align to this video
-              </button>
-            </div>
-          </Banner>
-        ) : null}
+  const centerDone = Boolean(arena || draftCenter);
+  const edgeDone = Boolean(arena || draftEdge);
+  const holeDone = Boolean(arena);
+  const targetDone = Boolean(arena);
+  const diameterDone = arena?.platformDiameterCm !== undefined;
+  const ready = Boolean(arena);
 
-        {arena ? (
-          <>
-            <Field label="Target hole" hint="Do not infer the target from disappearance. Choose it here.">
-              <select
-                value={arena.targetHoleIndex}
-                onChange={(event) =>
-                  setArena(trial.id, { ...arena, targetHoleIndex: Number(event.target.value) })
-                }
-              >
-                {arena.holeCentersPx.map((_, index) => (
-                  <option key={index} value={index}>
-                    Hole {index + 1}
-                    {index === arena.targetHoleIndex ? " (target)" : ""}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field
-              label="Platform diameter (cm)"
-              hint="Required for path length and speed in centimeters. Not assumed from the literature."
-            >
-              <input
-                type="number"
-                min={1}
-                step="0.1"
-                value={arena.platformDiameterCm ?? ""}
-                onChange={(event) =>
-                  setArena(trial.id, {
-                    ...arena,
-                    platformDiameterCm: event.target.value === "" ? undefined : Number(event.target.value),
-                  })
-                }
+  return (
+    <>
+      <PageHeader title="Arena">
+        <p>Place the platform and holes on {trial.source.fileName}.</p>
+      </PageHeader>
+      <div className="grid-2">
+        <section>
+          <h3>Arena preview</h3>
+          <p className="help">
+            {step === "platform-center" && "Click the platform center."}
+            {step === "platform-edge" && "Click a point on the platform edge."}
+            {step === "first-hole" && "Click the center of one clearly visible hole. The other 19 are generated at 18°."}
+            {step === "adjust" && "Select a hole, then nudge it with buttons or arrow keys."}
+          </p>
+          {url ? (
+            <div className="canvas-wrap">
+              <video ref={videoRef} src={url} muted playsInline />
+              <canvas
+                ref={canvasRef}
+                className="overlay-canvas"
+                onClick={onCanvasClick}
+                role="img"
+                aria-label="Arena overlay. Click to place platform or holes. Arrow keys nudge the selected hole."
               />
-            </Field>
-            <Field label="Hole radius (px)">
-              <input
-                type="number"
-                min={2}
-                value={arena.holeRadiusPx}
-                onChange={(event) => setArena(trial.id, { ...arena, holeRadiusPx: Number(event.target.value) })}
-              />
-            </Field>
-            <Field label="Platform radius (px)">
-              <input
-                type="number"
-                min={10}
-                value={Math.round(arena.platformRadiusPx)}
-                onChange={(event) => setArena(trial.id, { ...arena, platformRadiusPx: Number(event.target.value) })}
-              />
-            </Field>
-            <div className="row">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() =>
-                  setArena(trial.id, { ...arena, holeCentersPx: rotateHoles(arena, (2 * Math.PI) / 180) })
-                }
-              >
-                Rotate ring +1°
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() =>
-                  setArena(trial.id, { ...arena, holeCentersPx: rotateHoles(arena, -(2 * Math.PI) / 180) })
-                }
-              >
-                Rotate ring −1°
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setArena(trial.id, { ...arena, holeCentersPx: scaleHoleRing(arena, 1.01) })}
-              >
-                Scale ring +
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setArena(trial.id, { ...arena, holeCentersPx: scaleHoleRing(arena, 0.99) })}
-              >
-                Scale ring −
-              </button>
             </div>
-            <h3>Selected hole {selectedHole + 1}</h3>
-            <Field label="Nudge step (px)">
-              <input type="number" value={nudge} min={1} onChange={(event) => setNudge(Number(event.target.value))} />
-            </Field>
-            <div className="row">
-              <button type="button" className="btn-secondary" onClick={() => moveSelected(0, -nudge)}>
-                Up
-              </button>
-              <button type="button" className="btn-secondary" onClick={() => moveSelected(-nudge, 0)}>
-                Left
-              </button>
-              <button type="button" className="btn-secondary" onClick={() => moveSelected(nudge, 0)}>
-                Right
-              </button>
-              <button type="button" className="btn-secondary" onClick={() => moveSelected(0, nudge)}>
-                Down
-              </button>
-            </div>
-            <p className="help">
-              Arrow keys also nudge the selected hole. Hole sources:{" "}
-              {arena.holeSources?.filter((item) => item === "predicted").length ?? 0} predicted,{" "}
-              {arena.holeSources?.filter((item) => item === "refined").length ?? 0} refined,{" "}
-              {arena.holeSources?.filter((item) => item === "manual").length ?? 0} manual.
-            </p>
-            <button type="button" className="btn" onClick={() => setStage("track")}>
-              Continue to tracking
+          ) : (
+            <Banner kind="warn">
+              Relink {trial.source.fileName} to see the video. Saved geometry can still be edited from numbers.
+            </Banner>
+          )}
+          <p className="micro" style={{ marginTop: 8 }}>
+            Click to place · Arrow keys for precision
+          </p>
+          <div className="row" style={{ marginTop: 12 }}>
+            <button type="button" className="btn-secondary" onClick={suggestPlatform}>
+              Suggest platform
             </button>
-          </>
-        ) : (
-          <p className="help">Place the platform and one hole, or reuse a previous layout.</p>
-        )}
-      </section>
-    </div>
+            {arena ? (
+              <button type="button" className="btn-secondary" onClick={refineHoles}>
+                Refine holes locally
+              </button>
+            ) : null}
+          </div>
+        </section>
+        <section className="panel">
+          <h3>Arena setup</h3>
+          {geometryNote ? <p className="help">{geometryNote}</p> : null}
+          <ol className="setup-list">
+            <li>
+              <StepMark done={centerDone} /> Platform center
+            </li>
+            <li>
+              <StepMark done={edgeDone} /> Platform edge
+            </li>
+            <li>
+              <StepMark done={holeDone} /> First hole
+            </li>
+            <li>
+              <StepMark done={targetDone} /> Target hole
+            </li>
+            <li>
+              <StepMark done={diameterDone} /> Platform diameter
+            </li>
+          </ol>
+
+          {donor && trial && !arena ? (
+            <Banner kind="info">
+              Reuse the arena from {donor.source.fileName}.
+              <div className="row" style={{ marginTop: 8 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    reuseArena(donor.id, trial.id, copyArena(donor.arena!, "reused"));
+                    setStep("adjust");
+                  }}
+                >
+                  Reuse this arena layout
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    const video = videoRef.current;
+                    if (!video || !donor.arena) return;
+                    const canvas = document.createElement("canvas");
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext("2d");
+                    if (!ctx) return;
+                    ctx.drawImage(video, 0, 0);
+                    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const gray = rgbaToGray(image.data, canvas.width, canvas.height);
+                    const circle = estimateBrightCircle(gray);
+                    if (!circle) {
+                      reuseArena(donor.id, trial.id, copyArena(donor.arena, "reused"));
+                      setStep("adjust");
+                      return;
+                    }
+                    const scale = circle.radius / donor.arena.platformRadiusPx;
+                    const registered = transformArena(donor.arena, {
+                      translationX: circle.x - donor.arena.platformCenterPx.x,
+                      translationY: circle.y - donor.arena.platformCenterPx.y,
+                      scale,
+                      rotationRadians: 0,
+                    });
+                    reuseArena(donor.id, trial.id, { ...registered, geometrySource: "registered" });
+                    setStep("adjust");
+                  }}
+                >
+                  Align to this video
+                </button>
+              </div>
+            </Banner>
+          ) : null}
+
+          {arena ? (
+            <>
+              <p className="help" style={{ marginTop: 12 }}>
+                Arena ready · {arena.holeCentersPx.length} holes generated · Target: Hole {arena.targetHoleIndex + 1}
+                {arena.platformDiameterCm ? ` · Diameter: ${arena.platformDiameterCm} cm` : ""}
+              </p>
+              <Field label="Target hole" hint="Do not infer the target from disappearance. Choose it here.">
+                <select
+                  value={arena.targetHoleIndex}
+                  onChange={(event) =>
+                    setArena(trial.id, { ...arena, targetHoleIndex: Number(event.target.value) })
+                  }
+                >
+                  {arena.holeCentersPx.map((_, index) => (
+                    <option key={index} value={index}>
+                      Hole {index + 1}
+                      {index === arena.targetHoleIndex ? " (target)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field
+                label="Platform diameter (cm)"
+                hint="Required for path length and speed in centimeters. Not assumed from the literature."
+              >
+                <input
+                  type="number"
+                  min={1}
+                  step="0.1"
+                  value={arena.platformDiameterCm ?? ""}
+                  onChange={(event) =>
+                    setArena(trial.id, {
+                      ...arena,
+                      platformDiameterCm: event.target.value === "" ? undefined : Number(event.target.value),
+                    })
+                  }
+                />
+              </Field>
+              <details className="advanced">
+                <summary>Adjustments</summary>
+                <Field label="Hole radius (px)">
+                  <input
+                    type="number"
+                    min={2}
+                    value={arena.holeRadiusPx}
+                    onChange={(event) => setArena(trial.id, { ...arena, holeRadiusPx: Number(event.target.value) })}
+                  />
+                </Field>
+                <Field label="Platform radius (px)">
+                  <input
+                    type="number"
+                    min={10}
+                    value={Math.round(arena.platformRadiusPx)}
+                    onChange={(event) => setArena(trial.id, { ...arena, platformRadiusPx: Number(event.target.value) })}
+                  />
+                </Field>
+                <div className="row">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() =>
+                      setArena(trial.id, { ...arena, holeCentersPx: rotateHoles(arena, (2 * Math.PI) / 180) })
+                    }
+                  >
+                    Rotate ring +1°
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() =>
+                      setArena(trial.id, { ...arena, holeCentersPx: rotateHoles(arena, -(2 * Math.PI) / 180) })
+                    }
+                  >
+                    Rotate ring −1°
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setArena(trial.id, { ...arena, holeCentersPx: scaleHoleRing(arena, 1.01) })}
+                  >
+                    Scale ring +
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setArena(trial.id, { ...arena, holeCentersPx: scaleHoleRing(arena, 0.99) })}
+                  >
+                    Scale ring −
+                  </button>
+                </div>
+                <h3>Selected hole {selectedHole + 1}</h3>
+                <Field label="Nudge step (px)">
+                  <input type="number" value={nudge} min={1} onChange={(event) => setNudge(Number(event.target.value))} />
+                </Field>
+                <div className="row">
+                  <button type="button" className="btn-secondary" onClick={() => moveSelected(0, -nudge)}>
+                    Up
+                  </button>
+                  <button type="button" className="btn-secondary" onClick={() => moveSelected(-nudge, 0)}>
+                    Left
+                  </button>
+                  <button type="button" className="btn-secondary" onClick={() => moveSelected(nudge, 0)}>
+                    Right
+                  </button>
+                  <button type="button" className="btn-secondary" onClick={() => moveSelected(0, nudge)}>
+                    Down
+                  </button>
+                </div>
+                <p className="help">
+                  Arrow keys also nudge the selected hole. Hole sources:{" "}
+                  {arena.holeSources?.filter((item) => item === "predicted").length ?? 0} predicted,{" "}
+                  {arena.holeSources?.filter((item) => item === "refined").length ?? 0} refined,{" "}
+                  {arena.holeSources?.filter((item) => item === "manual").length ?? 0} manual.
+                </p>
+              </details>
+            </>
+          ) : (
+            <p className="help">Place the platform and one hole, or reuse a previous layout.</p>
+          )}
+        </section>
+      </div>
+      <WorkspaceFooter note={ready ? "Arena configured" : "Finish arena setup to continue"}>
+        <button type="button" className="btn" disabled={!ready} onClick={() => setStage("track")}>
+          Continue to Track →
+        </button>
+      </WorkspaceFooter>
+    </>
   );
 }

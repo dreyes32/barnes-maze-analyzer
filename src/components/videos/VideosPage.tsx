@@ -4,20 +4,28 @@ import { probeVideoFile } from "../../video/probe";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoFile, registerVideoFile } from "../../state/videoRegistry";
 import { fileMatchesMetadata, fingerprintFile } from "../../video/fingerprint";
-import { Banner, Field, StatusBadge } from "../ui";
+import { formatClockDuration } from "../../domain/session";
+import { loadDemoSession } from "../../demo/loadDemo";
+import { Callout, Field, PageHeader, StatusBadge, WorkspaceFooter } from "../ui";
+import { Dialog } from "../ui/Dialog";
+import { Menu } from "../ui/Menu";
 
 export function VideosPage() {
   const session = useSessionStore((state) => state.session);
   const addTrials = useSessionStore((state) => state.addTrials);
   const updateMetadata = useSessionStore((state) => state.updateMetadata);
   const bulkMetadata = useSessionStore((state) => state.bulkMetadata);
+  const moveTrialToGroup = useSessionStore((state) => state.moveTrialToGroup);
   const replaceSession = useSessionStore((state) => state.replaceSession);
   const setError = useSessionStore((state) => state.setError);
   const setStage = useSessionStore((state) => state.setStage);
   const current = currentTrialSelector(session);
   const [activeDrop, setActiveDrop] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [editingId, setEditingId] = useState<string>();
   const [bulk, setBulk] = useState({ cohort: "", day: "" });
+  const [timingHelp, setTimingHelp] = useState(false);
 
   const importFiles = useCallback(
     async (fileList: File[]) => {
@@ -74,14 +82,17 @@ export function VideosPage() {
     }
   };
 
+  const toggleSelected = (id: string) => {
+    setSelected((currentIds) => (currentIds.includes(id) ? currentIds.filter((item) => item !== id) : [...currentIds, id]));
+  };
+
   return (
     <>
+      <PageHeader title="Videos">
+        <p>Add Barnes maze recordings and assign experiment metadata.</p>
+      </PageHeader>
+
       <section className="card">
-        <h2>Videos</h2>
-        <p className="help">
-          Import one or more Barnes maze recordings. Filenames are not treated as animal IDs — enter those
-          yourself. Videos stay on this computer.
-        </p>
         <div
           className="dropzone"
           data-active={activeDrop}
@@ -96,10 +107,11 @@ export function VideosPage() {
             void importFiles([...event.dataTransfer.files]);
           }}
         >
-          <p>{busy ? "Reading video metadata…" : "Drop MP4 files here"}</p>
-          <div className="row" style={{ justifyContent: "center" }}>
+          <h3>Add Barnes maze videos</h3>
+          <p className="help">{busy ? "Reading video metadata…" : "Drop MP4 recordings here"}</p>
+          <div className="row" style={{ justifyContent: "center", marginTop: 12 }}>
             <label className="btn">
-              Choose files
+              Browse files
               <input
                 type="file"
                 accept="video/mp4,video/*"
@@ -122,8 +134,7 @@ export function VideosPage() {
                     const files: File[] = [];
                     for await (const entry of handle.values()) {
                       if (entry.kind === "file") {
-                        const file = await (entry as FileSystemFileHandle).getFile();
-                        files.push(file);
+                        files.push(await (entry as FileSystemFileHandle).getFile());
                       }
                     }
                     await importFiles(files);
@@ -131,124 +142,205 @@ export function VideosPage() {
                     if (error instanceof DOMException && error.name === "AbortError") return;
                     setError({
                       title: "Folder selection failed",
-                      detail: "Use Choose files if folder selection is blocked in this browser.",
+                      detail: "Use Browse files if folder selection is blocked in this browser.",
                     });
                   }
                 }}
               >
-                Choose folder
+                Choose experiment folder
               </button>
             ) : null}
           </div>
+          <p className="micro" style={{ marginTop: 12 }}>
+            Videos remain on this computer.
+          </p>
         </div>
       </section>
 
-      {session.trials.length > 0 ? (
-        <section className="card">
-          <h3>Trial list</h3>
-          <div className="row">
-            <Field label="Bulk cohort">
-              <input value={bulk.cohort} onChange={(event) => setBulk({ ...bulk, cohort: event.target.value })} />
-            </Field>
-            <Field label="Bulk day">
-              <input value={bulk.day} onChange={(event) => setBulk({ ...bulk, day: event.target.value })} />
-            </Field>
+      {session.trials.length === 0 ? (
+        <section className="empty-state">
+          <h3>No trials yet</h3>
+          <p className="help">Add Barnes maze recordings to begin an analysis, or open the labeled example.</p>
+          <div className="row" style={{ marginTop: 12 }}>
             <button
               type="button"
               className="btn-secondary"
-              onClick={() => bulkMetadata({ cohort: bulk.cohort || undefined, day: bulk.day || undefined })}
+              onClick={() => replaceSession(loadDemoSession(), { demo: true })}
             >
-              Apply to all trials
+              Load demo analysis
             </button>
           </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>File</th>
-                  <th>Duration</th>
-                  <th>Resolution</th>
-                  <th>Frame rate</th>
-                  <th>Animal</th>
-                  <th>Cohort</th>
-                  <th>Day</th>
-                  <th>Trial</th>
-                  <th>Status</th>
-                  <th>Video</th>
-                </tr>
-              </thead>
-              <tbody>
-                {session.trials.map((trial) => (
-                  <tr key={trial.id}>
-                    <td>{trial.source.fileName}</td>
-                    <td>{trial.source.durationSeconds.toFixed(2)} s</td>
-                    <td>
-                      {trial.source.width}×{trial.source.height}
-                    </td>
-                    <td>{describeVideoTiming(trial.source)}</td>
-                    <td>
+        </section>
+      ) : (
+        <section className="card">
+          <p className="eyebrow">{session.trials.length} trials</p>
+          <div className="row" style={{ margin: "12px 0" }}>
+            <label className="row">
+              <input
+                type="checkbox"
+                checked={selected.length === session.trials.length && session.trials.length > 0}
+                onChange={(event) =>
+                  setSelected(event.target.checked ? session.trials.map((trial) => trial.id) : [])
+                }
+              />
+              Select all
+            </label>
+          </div>
+          {selected.length > 0 ? (
+            <div className="row" style={{ margin: "0 0 12px" }}>
+              <span className="help">{selected.length} selected</span>
+              <Field label="Set cohort">
+                <input value={bulk.cohort} onChange={(event) => setBulk({ ...bulk, cohort: event.target.value })} />
+              </Field>
+              <Field label="Set day">
+                <input value={bulk.day} onChange={(event) => setBulk({ ...bulk, day: event.target.value })} />
+              </Field>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => bulkMetadata({ cohort: bulk.cohort || undefined, day: bulk.day || undefined }, selected)}
+              >
+                Apply
+              </button>
+              {(session.trialGroups ?? []).map((group) => (
+                <button
+                  key={group.id}
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => selected.forEach((id) => moveTrialToGroup(id, group.id))}
+                >
+                  Move to {group.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {session.trials.map((trial) => {
+            const meta = [
+              trial.experimentMetadata.animalId,
+              trial.experimentMetadata.cohort,
+              trial.experimentMetadata.day,
+              trial.experimentMetadata.trial ? `Trial ${trial.experimentMetadata.trial}` : undefined,
+            ]
+              .filter(Boolean)
+              .join(" · ");
+            return (
+              <article key={trial.id} className="trial-row">
+                <div className="trial-row-top">
+                  <label className="row">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(trial.id)}
+                      onChange={() => toggleSelected(trial.id)}
+                      aria-label={`Select ${trial.source.fileName}`}
+                    />
+                    <strong>{trial.source.fileName}</strong>
+                  </label>
+                  <StatusBadge status={trial.reviewStatus} />
+                </div>
+                <div className="trial-meta">{meta || "—"}</div>
+                <div className="trial-meta">
+                  {formatClockDuration(trial.source.durationSeconds)} · {trial.source.width}×{trial.source.height} ·{" "}
+                  {describeVideoTiming(trial.source)}
+                </div>
+                {trial.source.timebase?.isVariableFrameRate && trial.id === current?.id ? (
+                  <Callout kind="info">
+                    <div>
+                      <strong>Variable frame timing detected</strong>
+                      <div>Measurements use source timestamps; frame numbers may be approximate.</div>
+                      <button type="button" className="btn-ghost" onClick={() => setTimingHelp(true)}>
+                        Learn more
+                      </button>
+                    </div>
+                  </Callout>
+                ) : null}
+                <div className="row">
+                  <button type="button" className="btn-ghost" onClick={() => setEditingId(editingId === trial.id ? undefined : trial.id)}>
+                    Edit metadata
+                  </button>
+                  {getVideoFile(trial.id) ? (
+                    <span className="help">Linked</span>
+                  ) : (
+                    <label className="btn-secondary">
+                      Relink video
+                      <input
+                        type="file"
+                        accept="video/mp4,video/*"
+                        className="sr-only"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) void onRelink(trial.id, file);
+                        }}
+                      />
+                    </label>
+                  )}
+                  <Menu label="⋯" ariaLabel={`More actions for ${trial.source.fileName}`}>
+                    <button type="button" role="menuitem" onClick={() => setEditingId(trial.id)}>
+                      Edit metadata
+                    </button>
+                  </Menu>
+                </div>
+                {editingId === trial.id ? (
+                  <div className="row" style={{ marginTop: 8 }}>
+                    <Field label="Animal">
                       <input
                         aria-label={`Animal ID for ${trial.source.fileName}`}
                         value={trial.experimentMetadata.animalId ?? ""}
                         onChange={(event) => updateMetadata(trial.id, { animalId: event.target.value })}
                       />
-                    </td>
-                    <td>
+                    </Field>
+                    <Field label="Cohort">
                       <input
                         aria-label={`Cohort for ${trial.source.fileName}`}
                         value={trial.experimentMetadata.cohort ?? ""}
                         onChange={(event) => updateMetadata(trial.id, { cohort: event.target.value })}
                       />
-                    </td>
-                    <td>
+                    </Field>
+                    <Field label="Day">
                       <input
                         aria-label={`Day for ${trial.source.fileName}`}
                         value={trial.experimentMetadata.day ?? ""}
                         onChange={(event) => updateMetadata(trial.id, { day: event.target.value })}
                       />
-                    </td>
-                    <td>
+                    </Field>
+                    <Field label="Trial">
                       <input
                         aria-label={`Trial number for ${trial.source.fileName}`}
                         value={trial.experimentMetadata.trial ?? ""}
                         onChange={(event) => updateMetadata(trial.id, { trial: event.target.value })}
                       />
-                    </td>
-                    <td>
-                      <StatusBadge status={trial.reviewStatus} />
-                    </td>
-                    <td>
-                      {getVideoFile(trial.id) ? (
-                        "Linked"
-                      ) : (
-                        <label className="btn-secondary">
-                          Relink
-                          <input
-                            type="file"
-                            accept="video/mp4,video/*"
-                            className="sr-only"
-                            onChange={(event) => {
-                              const file = event.target.files?.[0];
-                              if (file) void onRelink(trial.id, file);
-                            }}
-                          />
-                        </label>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {current?.source.timebase?.isVariableFrameRate ? (
-            <Banner kind="warn">
-              This source looks variable-frame-rate. Timestamps are used for science; frame indices may be approximate.
-            </Banner>
-          ) : null}
-          <button type="button" className="btn" onClick={() => setStage("arena")}>
-            Continue to arena setup
-          </button>
+                    </Field>
+                    <Field label="Notes">
+                      <input
+                        aria-label={`Notes for ${trial.source.fileName}`}
+                        value={trial.experimentMetadata.notes ?? ""}
+                        onChange={(event) => updateMetadata(trial.id, { notes: event.target.value })}
+                      />
+                    </Field>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+          <WorkspaceFooter note={`${session.trials.length} trial${session.trials.length === 1 ? "" : "s"} ready`}>
+            <button type="button" className="btn" onClick={() => setStage("arena")}>
+              Continue to Arena →
+            </button>
+          </WorkspaceFooter>
         </section>
+      )}
+      {timingHelp ? (
+        <Dialog title="Variable frame timing" onClose={() => setTimingHelp(false)}>
+          <p className="help">
+            Some recordings, including NTSC-family video such as 15000/1001 fps, do not have an integer frame rate.
+            Barnes Maze Analyzer uses the file’s source timestamps for measurements. Displayed frame numbers can be
+            approximate when timing is variable.
+          </p>
+          <div className="row" style={{ marginTop: 16 }}>
+            <button type="button" className="btn" onClick={() => setTimingHelp(false)}>
+              Close
+            </button>
+          </div>
+        </Dialog>
       ) : null}
     </>
   );

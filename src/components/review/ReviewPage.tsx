@@ -6,7 +6,7 @@ import { describeTimebase, sourceFrameDurationSeconds } from "../../domain/timeb
 import type { BehavioralEvent, Point } from "../../domain/types";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
-import { Banner } from "../ui";
+import { Banner, PageHeader, WorkspaceFooter } from "../ui";
 import { MethodPanel } from "../method/MethodPanel";
 
 function nearestSampleIndex(samples: Array<{ timestampSeconds: number }>, time: number): number {
@@ -196,13 +196,36 @@ export function ReviewPage() {
     });
   };
 
-  if (!trial) return <Banner kind="info">Import a video first.</Banner>;
-  if (!trial.tracking) return <Banner kind="warn">Run tracking before review.</Banner>;
+  if (!trial) {
+    return (
+      <section className="empty-state">
+        <h2>Review</h2>
+        <p className="help">Import a video first.</p>
+      </section>
+    );
+  }
+  if (!trial.tracking) {
+    return (
+      <section className="empty-state">
+        <h2>Review</h2>
+        <p className="help">Tracking has not been run for this trial.</p>
+        <p className="help">Configure the arena, then start tracking.</p>
+      </section>
+    );
+  }
+
+  const provenance =
+    sample?.source === "manual" ? "◆ Manual" : sample?.source === "interpolated" ? "○ Interpolated" : "● Automatic";
+  const issueLabel = issues.length ? `Issue ${Math.min(issueIndex + 1, issues.length)} of ${issues.length}` : "No issues";
 
   return (
     <>
+      <PageHeader title="Review">
+        <p>
+          Review {trial.source.fileName} · {issueLabel}
+        </p>
+      </PageHeader>
       <section className="card">
-        <h2>Review</h2>
         <p className="help">
           Sample buttons jump between tracker observations. Frame buttons step the source video using its
           parsed timebase (not assumed 30 fps). Corrections use the inspected source timestamp. Automatic
@@ -281,14 +304,27 @@ export function ReviewPage() {
               </label>
             </div>
             <p>
-              source t = {reviewTimestamp().toFixed(3)} s
+              {reviewTimestamp().toFixed(2)} s
               {trial.source.timebase ? ` · ${describeTimebase(trial.source.timebase)}` : ""}
               {frameDuration ? ` · frame step ${frameDuration.toFixed(5)} s` : ""}
+            </p>
+            <p>
+              {sample?.source === "manual" ? "Manual body position" : "Automatic body position"}
+              {" · "}
+              <span className="provenance" data-kind={sample?.source ?? "automatic"} title={sample?.source === "manual" ? "Manual correction" : "Automatic observation"}>
+                {provenance}
+              </span>
+              {" · Confidence: "}
+              {sample ? (sample.confidence < 0.5 ? "Low" : sample.confidence < 0.8 ? "Moderate" : "High") : "—"}
+              {" ("}
+              {sample ? sample.confidence.toFixed(2) : "—"}
+              {")"}
             </p>
             <p>
               nearest sample t = {sample?.timestampSeconds.toFixed(3) ?? "—"} s · {sample?.status ?? "—"} ·{" "}
               {sample?.source ?? "—"} · confidence {sample ? sample.confidence.toFixed(2) : "—"}
             </p>
+            <h3>Correction tools</h3>
             <div className="row">
               <button type="button" className={mode === "body" ? "btn" : "btn-secondary"} onClick={() => setMode("body")}>
                 Correct body
@@ -328,7 +364,10 @@ export function ReviewPage() {
             </div>
           </div>
           <div>
-            <h3>Review {issues.length} issues</h3>
+            <h3>{issues.length ? `Review ${issues.length} issues` : "No tracking issues require review"}</h3>
+            {issues.length === 0 ? (
+              <p className="help">You can still inspect the trajectory manually.</p>
+            ) : null}
             <div className="row">
               <button
                 type="button"
@@ -564,14 +603,14 @@ export function ReviewPage() {
           duration={trial.source.durationSeconds}
           onJump={(time) => seekToTime(time)}
         />
-        <div className="row" style={{ marginTop: "0.8rem" }}>
+        <WorkspaceFooter note={issues.length ? `${issues.length} intervals need review` : "Review complete"}>
           <button type="button" className="btn-secondary" onClick={() => markReviewed(trial.id, "reviewed")}>
             Mark reviewed
           </button>
           <button type="button" className="btn" onClick={() => setStage("results")}>
-            Continue to results
+            View Results →
           </button>
-        </div>
+        </WorkspaceFooter>
       </section>
       <MethodPanel />
     </>

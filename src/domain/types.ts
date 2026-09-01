@@ -277,6 +277,13 @@ export type TrialRecord = {
   qc?: QCSummary;
   reviewStatus: ReviewStatus;
   videoRelinkRequired?: boolean;
+  groupId?: string;
+};
+
+export type TrialGroup = {
+  id: string;
+  name: string;
+  collapsed?: boolean;
 };
 
 export type AnalysisSession = {
@@ -288,6 +295,7 @@ export type AnalysisSession = {
   updatedAt: string;
   parameters: AnalysisParameters;
   trials: TrialRecord[];
+  trialGroups?: TrialGroup[];
   currentStage: WorkflowStage;
   currentTrialId?: string;
   isDemo?: boolean;

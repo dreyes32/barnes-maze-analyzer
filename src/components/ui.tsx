@@ -1,13 +1,47 @@
 import type { ReactNode } from "react";
 import type { ReviewStatus } from "../domain/types";
-import { reviewStatusLabel } from "../domain/session";
+import { reviewStatusLabel, reviewStatusMark } from "../domain/session";
 
 export function StatusBadge({ status }: { status: ReviewStatus }) {
   return (
-    <span className={`status-pill status-${status}`}>
-      <span className="status-dot" aria-hidden="true" />
+    <span className={`status status-pill status-${status}`}>
+      <span className="status-mark" aria-hidden="true">
+        {reviewStatusMark(status)}
+      </span>
       <span>{reviewStatusLabel(status)}</span>
     </span>
+  );
+}
+
+export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <header className="page-header">
+      <h2>{title}</h2>
+      {children}
+    </header>
+  );
+}
+
+export function WorkspaceFooter({ note, children }: { note?: string; children: ReactNode }) {
+  return (
+    <div className="workspace-footer">
+      <p className="help">{note}</p>
+      <div className="row">{children}</div>
+    </div>
+  );
+}
+
+export function Callout({
+  kind = "info",
+  children,
+}: {
+  kind?: "warn" | "danger" | "ok" | "info";
+  children: ReactNode;
+}) {
+  return (
+    <div className={`callout compact ${kind}`} role={kind === "danger" ? "alert" : "status"}>
+      {children}
+    </div>
   );
 }
 

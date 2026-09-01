@@ -3,7 +3,7 @@ import { trialSummaryCsv, eventsCsv, trackingPointsCsv } from "../../export/csv"
 import { downloadXlsx } from "../../export/xlsx";
 import { downloadTextFile, safeFilename, sessionToPortableJson } from "../../export/analysisJson";
 import { downloadSvg, downloadPngFromSvg } from "../../export/figures";
-import { Banner, MetricCard, StatusBadge } from "../ui";
+import { Banner, MetricCard, PageHeader, StatusBadge } from "../ui";
 import { TrajectoryPlot } from "../charts/TrajectoryPlot";
 import { EventRaster } from "../charts/EventRaster";
 import { OccupancyHeatmap } from "../charts/OccupancyHeatmap";
@@ -48,19 +48,42 @@ export function ResultsPage() {
     }
   };
 
-  if (!trial) return <Banner kind="info">Import a video first.</Banner>;
+  if (!trial) {
+    return (
+      <section className="empty-state">
+        <h2>Results</h2>
+        <p className="help">Results will appear after tracking and review.</p>
+      </section>
+    );
+  }
+
+  const meta = [
+    trial.experimentMetadata.animalId,
+    trial.experimentMetadata.cohort,
+    trial.experimentMetadata.day,
+    trial.experimentMetadata.trial ? `Trial ${trial.experimentMetadata.trial}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <>
+      <PageHeader title="Results">
+        <p>
+          {meta || trial.source.fileName}
+          {" · "}
+          <StatusBadge status={trial.reviewStatus} />
+        </p>
+      </PageHeader>
       {session.isDemo ? (
         <Banner kind="info">This is a labeled example analysis, not a newly executed run on this machine.</Banner>
       ) : null}
+      {!trial.tracking ? (
+        <section className="empty-state">
+          <h3>Results will appear after tracking and review.</h3>
+        </section>
+      ) : null}
       <section className="card" id="results-report">
-        <h2>Results</h2>
-        <p>
-          {trial.source.fileName} · {trial.experimentMetadata.animalId ?? "animal not set"} ·{" "}
-          <StatusBadge status={trial.reviewStatus} />
-        </p>
         <dl className="metrics">
           <MetricCard label="Primary latency" value={trial.metrics?.primaryLatencySeconds} unit="s" missing="No target investigation" />
           <MetricCard label="Total latency" value={trial.metrics?.totalLatencySeconds} unit="s" missing="Escape not confirmed" />
@@ -86,8 +109,9 @@ export function ResultsPage() {
           <Banner key={reason} kind="warn">{reason}</Banner>
         ))}
         {trial.arena && trial.tracking ? (
-          <div className="grid-2">
-            <div id="figure-trajectory">
+          <div className="results-figures">
+            <div id="figure-trajectory" className="figure-primary">
+              <h3>Trajectory</h3>
               <TrajectoryPlot
                 arena={trial.arena}
                 samples={trial.tracking.effectiveSamples}
@@ -116,15 +140,21 @@ export function ResultsPage() {
                 </button>
               </div>
             </div>
-            <OccupancyHeatmap arena={trial.arena} samples={trial.tracking.effectiveSamples} />
+            <section>
+              <h3>Tracking quality</h3>
+              <OccupancyHeatmap arena={trial.arena} samples={trial.tracking.effectiveSamples} />
+            </section>
           </div>
         ) : null}
-        <EventRaster
+        <section>
+          <h3>Hole investigations</h3>
+          <EventRaster
           events={trial.events}
           duration={trial.source.durationSeconds}
           arena={trial.arena}
           onSelect={() => undefined}
         />
+        </section>
         {trial.strategy ? (
           <section>
             <h3>Search strategy</h3>
@@ -183,9 +213,9 @@ export function ResultsPage() {
         </div>
       </section>
       <section className="card no-print">
-        <h3>Export</h3>
+        <h3>Exports</h3>
         <div className="row">
-          <button type="button" className="btn" onClick={exportCsv}>
+          <button type="button" className="btn-secondary" onClick={exportCsv}>
             Download CSV
           </button>
           <button type="button" className="btn-secondary" onClick={() => void downloadXlsx(session, `${safeFilename(session.name)}-results.xlsx`)}>

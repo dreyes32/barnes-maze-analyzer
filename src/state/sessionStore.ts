@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { DEFAULT_PARAMETERS } from "../domain/defaults";
 import { createId, nowIso } from "../domain/ids";
 import { describeParameterImpact, formatParameterImpact, recomputeSession, recomputeTrial } from "../domain/pipeline";
-import { createEmptySession, createTrial } from "../domain/session";
+import { createEmptySession, createTrial, createTrialGroup, removeTrialFromSession } from "../domain/session";
 import type {
   AnalysisParameters,
   AnalysisSession,
@@ -17,7 +17,7 @@ import type {
   WorkflowStage,
 } from "../domain/types";
 import { saveSession } from "../persistence/db";
-import { hasVideo } from "./videoRegistry";
+import { forgetVideo, hasVideo } from "./videoRegistry";
 
 type AppError = {
   title: string;
@@ -49,8 +49,15 @@ type SessionState = {
   setStage: (stage: WorkflowStage) => void;
   setCurrentTrial: (trialId: string) => void;
   addTrials: (sources: VideoSourceMetadata[]) => string[];
+  removeTrial: (trialId: string) => void;
+  resetSession: () => void;
   updateMetadata: (trialId: string, metadata: ExperimentMetadata) => void;
-  bulkMetadata: (metadata: ExperimentMetadata) => void;
+  bulkMetadata: (metadata: ExperimentMetadata, trialIds?: string[]) => void;
+  addGroup: (name: string) => string;
+  renameGroup: (groupId: string, name: string) => void;
+  toggleGroup: (groupId: string) => void;
+  deleteGroup: (groupId: string) => void;
+  moveTrialToGroup: (trialId: string, groupId?: string) => void;
   setArena: (trialId: string, arena: ArenaGeometry) => void;
   reuseArena: (fromTrialId: string, toTrialId: string, arena: ArenaGeometry) => void;
   setTrackingResult: (trialId: string, tracking: TrackingResult) => void;
@@ -146,6 +153,20 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     return trials.map((trial) => trial.id);
   },
 
+  removeTrial: (trialId) => {
+    forgetVideo(trialId);
+    const next = removeTrialFromSession(get().session, trialId);
+    set({ session: { ...next, updatedAt: nowIso() } });
+    void get().persist();
+  },
+
+  resetSession: () => {
+    get().session.trials.forEach((trial) => forgetVideo(trial.id));
+    const empty = createEmptySession();
+    set({ session: empty, lastImpact: undefined, lastImpactText: undefined });
+    void get().persist();
+  },
+
   updateMetadata: (trialId, metadata) => {
     set({
       session: withTrial(get().session, trialId, (trial) => ({
@@ -156,17 +177,85 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     void get().persist();
   },
 
-  bulkMetadata: (metadata) => {
+  bulkMetadata: (metadata, trialIds) => {
     const session = get().session;
+    const selected = trialIds ? new Set(trialIds) : null;
     set({
       session: {
         ...session,
         updatedAt: nowIso(),
-        trials: session.trials.map((trial) => ({
-          ...trial,
-          experimentMetadata: { ...trial.experimentMetadata, ...metadata },
-        })),
+        trials: session.trials.map((trial) =>
+          !selected || selected.has(trial.id)
+            ? { ...trial, experimentMetadata: { ...trial.experimentMetadata, ...metadata } }
+            : trial,
+        ),
       },
+    });
+    void get().persist();
+  },
+
+  addGroup: (name) => {
+    const group = createTrialGroup(name);
+    const session = get().session;
+    set({
+      session: {
+        ...session,
+        trialGroups: [...(session.trialGroups ?? []), group],
+        updatedAt: nowIso(),
+      },
+    });
+    void get().persist();
+    return group.id;
+  },
+
+  renameGroup: (groupId, name) => {
+    const session = get().session;
+    set({
+      session: {
+        ...session,
+        trialGroups: (session.trialGroups ?? []).map((group) =>
+          group.id === groupId ? { ...group, name: name.trim() || group.name } : group,
+        ),
+        updatedAt: nowIso(),
+      },
+    });
+    void get().persist();
+  },
+
+  toggleGroup: (groupId) => {
+    const session = get().session;
+    set({
+      session: {
+        ...session,
+        trialGroups: (session.trialGroups ?? []).map((group) =>
+          group.id === groupId ? { ...group, collapsed: !group.collapsed } : group,
+        ),
+        updatedAt: nowIso(),
+      },
+    });
+    void get().persist();
+  },
+
+  deleteGroup: (groupId) => {
+    const session = get().session;
+    const occupied = session.trials.some((trial) => trial.groupId === groupId);
+    if (occupied) return;
+    set({
+      session: {
+        ...session,
+        trialGroups: (session.trialGroups ?? []).filter((group) => group.id !== groupId),
+        updatedAt: nowIso(),
+      },
+    });
+    void get().persist();
+  },
+
+  moveTrialToGroup: (trialId, groupId) => {
+    set({
+      session: withTrial(get().session, trialId, (trial) => ({
+        ...trial,
+        groupId,
+      })),
     });
     void get().persist();
   },
