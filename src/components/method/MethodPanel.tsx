@@ -7,9 +7,21 @@ export function MethodPanel() {
   const updateParameters = useSessionStore((state) => state.updateParameters);
   const impact = useSessionStore((state) => state.lastImpactText);
 
+  const gap =
+    parameters.cleanup.gapFill === "none"
+      ? "no gap fill"
+      : `short gaps ≤ ${parameters.cleanup.maxGapSeconds} s`;
+  const smoothing = parameters.cleanup.smoothing === "none" ? "no smoothing" : parameters.cleanup.smoothing;
+
   return (
-    <section className="card">
-      <h2>Method / Analysis settings</h2>
+    <details className="method-settings">
+      <summary>
+        <strong>Method / Analysis settings</strong>
+        <span className="help">
+          {parameters.sampling.targetObservationsPerSecond} observations/s · {gap} · {smoothing} ·{" "}
+          {parameters.events.investigationRadiusCm} cm investigation radius
+        </span>
+      </summary>
       <p className="help">
         These definitions are the ones used for events, cleanup, and strategy. Changing a value recomputes
         everything downstream and keeps raw automatic tracking.
@@ -249,6 +261,6 @@ export function MethodPanel() {
           </Field>
         </div>
       </details>
-    </section>
+    </details>
   );
 }

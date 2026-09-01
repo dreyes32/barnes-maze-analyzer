@@ -16,13 +16,20 @@ test("demo analysis, correction, reload, parameter change, and CSV export", asyn
   await page.getByRole("button", { name: "Load demo analysis" }).click();
   await expect(page.getByText("Example analysis", { exact: true })).toBeVisible();
   await expect(page.getByText("Primary latency", { exact: true })).toBeVisible();
+  await expect(page.getByText("Researcher classification", { exact: true })).toBeVisible();
+  await workflowStep(page, "Review").click();
+  await expect(page.getByRole("tab", { name: /Issues/ })).toBeVisible();
+  await page.getByRole("tab", { name: /Events/ }).click();
+  await expect(page.getByRole("heading", { name: "All events", exact: true })).toBeVisible();
+  await workflowStep(page, "Results").click();
+  await expect(page.getByText("Primary latency", { exact: true })).toBeVisible();
   const pathBefore = await page.locator(".metric").filter({ hasText: "Path length" }).locator("dd").innerText();
 
   await workflowStep(page, "Review").click();
   await expect(page.getByRole("heading", { name: "Review", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Correct body" }).click();
   await page.getByRole("button", { name: "Mark hidden in hole" }).click();
-  await expect(page.getByText(/Manual correction at/)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Manual correction at 0.0 s.", { exact: true })).toBeVisible({ timeout: 10_000 });
 
   await workflowStep(page, "Results").click();
   const pathAfter = await page.locator(".metric").filter({ hasText: "Path length" }).locator("dd").innerText();
@@ -30,10 +37,11 @@ test("demo analysis, correction, reload, parameter change, and CSV export", asyn
 
   await page.reload();
   await workflowStep(page, "Review").click();
-  await expect(page.getByText(/Manual correction at/)).toBeVisible();
+  await expect(page.getByText("Manual correction at 0.0 s.", { exact: true })).toBeVisible();
   await expect(page.getByText(/t = 0\.000 s · hidden · manual/)).toBeVisible();
 
   await workflowStep(page, "Results").click();
+  await page.getByText("Method / Analysis settings", { exact: true }).click();
   await page.getByLabel("Minimum investigation (s)").fill("0.4");
   await page.getByLabel("Minimum investigation (s)").blur();
   await expect(page.getByText(/minimum investigation duration/i)).toBeVisible();
@@ -83,6 +91,20 @@ test("trial groups persist after reload", async ({ page }) => {
   await expect(page.getByText("✓ Saved locally")).toBeVisible();
   await page.reload();
   await expect(page.getByRole("button", { name: /Day 1/ })).toBeVisible();
+});
+
+test("arena treats zero diameter as uncalibrated", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Load demo analysis" }).click();
+  await workflowStep(page, "Arena").click();
+  await expect(page.getByText("Physical scale")).toBeVisible();
+  await expect(page.getByText(/Arena calibrated/)).toBeVisible();
+  await page.getByLabel("Platform diameter (cm)").fill("0");
+  await page.getByLabel("Platform diameter (cm)").blur();
+  await expect(page.getByText(/Geometry ready/)).toBeVisible();
+  await expect(page.getByText(/Physical scale required/)).toBeVisible();
+  await workflowStep(page, "Results").click();
+  await expect(page.getByRole("button", { name: "Set diameter" }).first()).toBeVisible();
 });
 
 test("no major axe violations on demo results", async ({ page }) => {

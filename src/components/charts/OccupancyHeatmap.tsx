@@ -21,9 +21,7 @@ export function OccupancyHeatmap({
   const max = Math.max(1, ...counts);
   return (
     <figure>
-      <figcaption>
-        <strong>Occupancy</strong> (valid tracking only; interpolated points excluded)
-      </figcaption>
+      <figcaption className="sr-only">Occupancy heatmap</figcaption>
       <svg viewBox={`0 0 ${bins} ${bins}`} width="100%" role="img" aria-label="Occupancy heatmap">
         {counts.map((count, index) => {
           const x = index % bins;

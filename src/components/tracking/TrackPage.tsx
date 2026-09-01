@@ -110,55 +110,65 @@ export function TrackPage() {
           Background subtraction inside the platform, then a thick-core body location so the tail does not
           dominate. Failures stay failed unless you enable short-gap interpolation in Method settings.
         </p>
-        {url ? <video ref={videoRef} src={url} muted playsInline controls style={{ maxWidth: "100%" }} /> : (
-          <Banner kind="warn">Relink this video to run tracking.</Banner>
-        )}
-        <p className="help">
-          Analysis sampling: {session.parameters.sampling.targetObservationsPerSecond} observations/s (source{" "}
-          {trial.source.fps ? `${trial.source.fps.toFixed(3)} fps` : "timebase from media timestamps"}).
-        </p>
-
-        {runningThis ? (
-          <div className="panel" style={{ marginTop: 16 }}>
-            <ol className="setup-list">
-              <JobStep
-                label="Background estimation"
-                state={tracking.stage === "background" ? "active" : "done"}
-                detail={tracking.stage === "background" && tracking.total ? `${tracking.current} / ${tracking.total}` : undefined}
-              />
-              <JobStep
-                label="Animal tracking"
-                state={tracking.stage === "tracking" ? "active" : tracking.stage === "background" ? "waiting" : "waiting"}
-                detail={tracking.stage === "tracking" ? `${percent}%` : undefined}
-              />
-            </ol>
-            <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={tracking.total || 1} aria-valuenow={tracking.current}>
-              <span style={{ width: `${percent}%` }} />
-            </div>
-            <p className="help" style={{ marginTop: 8 }}>
-              Sample {tracking.current.toLocaleString()} / {tracking.total.toLocaleString()}
-              {tracking.timestampSeconds ? ` · ${tracking.timestampSeconds.toFixed(1)} s` : ""}
+        <div className={trial.tracking && !runningThis ? "track-layout" : undefined}>
+          <div>
+            {url ? <video ref={videoRef} src={url} muted playsInline controls style={{ maxWidth: "100%" }} /> : (
+              <Banner kind="warn">Relink this video to run tracking.</Banner>
+            )}
+            <p className="help">
+              Analysis sampling: {session.parameters.sampling.targetObservationsPerSecond} observations/s (source{" "}
+              {trial.source.fps ? `${trial.source.fps.toFixed(3)} fps` : "timebase from media timestamps"}).
             </p>
-            <button
-              type="button"
-              className="btn-danger"
-              onClick={() => abortRef.current?.abort()}
-            >
-              Cancel tracking
-            </button>
+            {runningThis ? (
+              <div className="panel" style={{ marginTop: 16 }}>
+                <ol className="setup-list">
+                  <JobStep
+                    label="Background estimation"
+                    state={tracking.stage === "background" ? "active" : "done"}
+                    detail={tracking.stage === "background" && tracking.total ? `${tracking.current} / ${tracking.total}` : undefined}
+                  />
+                  <JobStep
+                    label="Animal tracking"
+                    state={tracking.stage === "tracking" ? "active" : "waiting"}
+                    detail={tracking.stage === "tracking" ? `${percent}%` : undefined}
+                  />
+                </ol>
+                <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={tracking.total || 1} aria-valuenow={tracking.current}>
+                  <span style={{ width: `${percent}%` }} />
+                </div>
+                <p className="help" style={{ marginTop: 8 }}>
+                  Sample {tracking.current.toLocaleString()} / {tracking.total.toLocaleString()}
+                  {tracking.timestampSeconds ? ` · ${tracking.timestampSeconds.toFixed(1)} s` : ""}
+                </p>
+                <button type="button" className="btn-danger" onClick={() => abortRef.current?.abort()}>
+                  Cancel tracking
+                </button>
+              </div>
+            ) : (
+              <div className="row">
+                <button type="button" className="btn" onClick={() => void start()} disabled={!url}>
+                  {trial.tracking ? "Re-run tracking" : "Start tracking"}
+                </button>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="row">
-            <button type="button" className="btn" onClick={() => void start()} disabled={!url}>
-              {trial.tracking ? "Re-run tracking" : "Start tracking"}
-            </button>
-            {trial.tracking ? (
-              <button type="button" className="btn-secondary" onClick={() => setStage("review")}>
-                Review tracking
+          {trial.tracking && trial.qc && !runningThis ? (
+            <aside className="panel">
+              <h3>Tracking complete</h3>
+              <dl className="metrics compact-metrics">
+                <MetricCard label="Coverage" value={trial.qc.trackingCoveragePercent} unit="%" />
+                <MetricCard label="Low confidence" value={trial.qc.lowConfidence} />
+                <MetricCard label="Failed" value={trial.qc.failed} />
+                <MetricCard label="Interpolated" value={trial.qc.interpolated} />
+                <MetricCard label="Review issues" value={issues.length} />
+                <MetricCard label="Largest gap" value={trial.qc.largestMissingIntervalSeconds} unit="s" />
+              </dl>
+              <button type="button" className="btn" onClick={() => setStage("review")}>
+                Review tracking →
               </button>
-            ) : null}
-          </div>
-        )}
+            </aside>
+          ) : null}
+        </div>
         {localError ? <Banner kind="danger">{localError}</Banner> : null}
       </section>
 
@@ -170,12 +180,8 @@ export function TrackPage() {
       ) : null}
 
       {trial.tracking && trial.qc && !runningThis ? (
-        <section className="panel">
-          <h3>Tracking complete</h3>
-          <p>
-            {trial.qc.trackingCoveragePercent.toFixed(1)}% coverage · {trial.events.length} behavioral events ·{" "}
-            {issues.length} interval{issues.length === 1 ? "" : "s"} need review
-          </p>
+        <section>
+          <h3>Quality detail</h3>
           <dl className="metrics">
             <MetricCard label="Observations" value={trial.qc.observationsAttempted} />
             <MetricCard label="Tracked" value={trial.qc.tracked} />

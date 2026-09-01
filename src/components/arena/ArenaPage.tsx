@@ -247,7 +247,7 @@ export function ArenaPage() {
   const edgeDone = Boolean(arena || draftEdge);
   const holeDone = Boolean(arena);
   const targetDone = Boolean(arena);
-  const diameterDone = arena?.platformDiameterCm !== undefined;
+  const calibrated = typeof arena?.platformDiameterCm === "number" && arena.platformDiameterCm > 0;
   const ready = Boolean(arena);
 
   return (
@@ -311,7 +311,7 @@ export function ArenaPage() {
               <StepMark done={targetDone} /> Target hole
             </li>
             <li>
-              <StepMark done={diameterDone} /> Platform diameter
+              <StepMark done={calibrated} /> Physical scale
             </li>
           </ol>
 
@@ -369,8 +369,9 @@ export function ArenaPage() {
           {arena ? (
             <>
               <p className="help" style={{ marginTop: 12 }}>
-                Arena ready · {arena.holeCentersPx.length} holes generated · Target: Hole {arena.targetHoleIndex + 1}
-                {arena.platformDiameterCm ? ` · Diameter: ${arena.platformDiameterCm} cm` : ""}
+                {calibrated
+                  ? `Arena calibrated · ${arena.holeCentersPx.length} holes · Target: Hole ${arena.targetHoleIndex + 1} · ${arena.platformDiameterCm} cm platform`
+                  : `Geometry ready · ${arena.holeCentersPx.length} holes generated · Target: Hole ${arena.targetHoleIndex + 1}. Physical scale required for distance and speed.`}
               </p>
               <Field label="Target hole" hint="Do not infer the target from disappearance. Choose it here.">
                 <select

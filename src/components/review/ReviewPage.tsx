@@ -3,7 +3,7 @@ import { investigationTypeForHole } from "../../domain/events";
 import { createId } from "../../domain/ids";
 import { buildReviewIssues } from "../../domain/qc";
 import { describeTimebase, sourceFrameDurationSeconds } from "../../domain/timebase";
-import type { BehavioralEvent, Point } from "../../domain/types";
+import type { BehavioralEvent, Point, ReviewIssueKind } from "../../domain/types";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
 import { Banner, PageHeader, WorkspaceFooter } from "../ui";
@@ -40,6 +40,8 @@ export function ReviewPage() {
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
   const [addHole, setAddHole] = useState(1);
+  const [sideTab, setSideTab] = useState<"issues" | "events">("issues");
+  const [eventFilter, setEventFilter] = useState<"all" | "target" | "nontarget" | "manual">("all");
   const url = trial ? getVideoUrl(trial.id) : undefined;
   const samples = trial?.tracking?.effectiveSamples ?? [];
   const issues = useMemo(() => (trial ? buildReviewIssues(trial) : []), [trial]);
@@ -214,9 +216,16 @@ export function ReviewPage() {
     );
   }
 
-  const provenance =
-    sample?.source === "manual" ? "◆ Manual" : sample?.source === "interpolated" ? "○ Interpolated" : "● Automatic";
   const issueLabel = issues.length ? `Issue ${Math.min(issueIndex + 1, issues.length)} of ${issues.length}` : "No issues";
+  const currentIssue = issues[issueIndex];
+  const now = reviewTimestamp();
+  const nearbyEvents = trial.events.filter((event) => Math.abs(event.startSeconds - now) <= 2);
+  const filteredEvents = trial.events.filter((event) => {
+    if (eventFilter === "target") return event.type === "target-investigation" || event.type === "escape-entry";
+    if (eventFilter === "nontarget") return event.type === "hole-investigation";
+    if (eventFilter === "manual") return event.source === "manual";
+    return true;
+  });
 
   return (
     <>
@@ -227,9 +236,7 @@ export function ReviewPage() {
       </PageHeader>
       <section className="card">
         <p className="help">
-          Sample buttons jump between tracker observations. Frame buttons step the source video using its
-          parsed timebase (not assumed 30 fps). Corrections use the inspected source timestamp. Automatic
-          values are kept. Manual points use a square marker and a Manual label.
+          Tracking uses sampled observations. Frame controls inspect the source video precisely.
         </p>
         <div className="grid-2">
           <div>
@@ -256,52 +263,88 @@ export function ReviewPage() {
             ) : (
               <Banner kind="warn">Relink the video to see frames. Corrections can still be inspected from the timeline.</Banner>
             )}
-            <div className="row" style={{ marginTop: "0.5rem" }}>
-              <button type="button" className="btn-secondary" onClick={() => seekTo(index - 1)}>
-                Previous sample
-              </button>
-              <button type="button" className="btn-secondary" onClick={() => seekTo(index + 1)}>
-                Next sample
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={!frameDuration}
-                onClick={() => stepSourceFrame(-1)}
-              >
-                Previous frame
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={!frameDuration}
-                onClick={() => stepSourceFrame(1)}
-              >
-                Next frame
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => {
-                  const video = videoRef.current;
-                  if (!video) return;
-                  if (video.paused) void video.play();
-                  else video.pause();
-                }}
-              >
-                Play / pause
-              </button>
-              <label>
-                Jump to time (s)
-                <input
-                  type="number"
-                  step="0.01"
-                  onBlur={(event) => {
-                    const time = Number(event.target.value);
-                    if (Number.isFinite(time)) seekToTime(time);
+            <div className="review-nav">
+              <div className="review-nav-group">
+                <span className="micro">Sample</span>
+                <div className="row">
+                  <button type="button" className="btn-secondary" title="Jump to previous analyzed observation" onClick={() => seekTo(index - 1)}>
+                    Previous sample
+                  </button>
+                  <button type="button" className="btn-secondary" title="Jump to next analyzed observation" onClick={() => seekTo(index + 1)}>
+                    Next sample
+                  </button>
+                </div>
+              </div>
+              <div className="review-nav-group">
+                <span className="micro">Frame</span>
+                <div className="row">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    title="Step one source video frame earlier"
+                    disabled={!frameDuration}
+                    onClick={() => stepSourceFrame(-1)}
+                  >
+                    Previous frame
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    title="Step one source video frame later"
+                    disabled={!frameDuration}
+                    onClick={() => stepSourceFrame(1)}
+                  >
+                    Next frame
+                  </button>
+                </div>
+              </div>
+              <div className="review-nav-group">
+                <span className="micro">Playback</span>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    const video = videoRef.current;
+                    if (!video) return;
+                    if (video.paused) void video.play();
+                    else video.pause();
                   }}
-                />
-              </label>
+                >
+                  Play / pause
+                </button>
+              </div>
+              <div className="review-nav-group">
+                <span className="micro">Time</span>
+                <div className="row">
+                  <label>
+                    Jump to time (s)
+                    <input
+                      type="number"
+                      step="0.01"
+                      onBlur={(event) => {
+                        const time = Number(event.target.value);
+                        if (Number.isFinite(time)) seekToTime(time);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        const time = Number((event.target as HTMLInputElement).value);
+                        if (Number.isFinite(time)) seekToTime(time);
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={(event) => {
+                      const input = (event.currentTarget.parentElement?.querySelector("input") as HTMLInputElement | null);
+                      const time = Number(input?.value);
+                      if (Number.isFinite(time)) seekToTime(time);
+                    }}
+                  >
+                    Go
+                  </button>
+                </div>
+              </div>
             </div>
             <p>
               {reviewTimestamp().toFixed(2)} s
@@ -311,8 +354,8 @@ export function ReviewPage() {
             <p>
               {sample?.source === "manual" ? "Manual body position" : "Automatic body position"}
               {" · "}
-              <span className="provenance" data-kind={sample?.source ?? "automatic"} title={sample?.source === "manual" ? "Manual correction" : "Automatic observation"}>
-                {provenance}
+              <span className="provenance" data-kind={sample?.source ?? "automatic"}>
+                {sample?.source === "manual" ? "◆ Manual" : sample?.source === "interpolated" ? "⋯ Interpolated" : sample?.status === "failed" ? "× Failed" : "● Automatic"}
               </span>
               {" · Confidence: "}
               {sample ? (sample.confidence < 0.5 ? "Low" : sample.confidence < 0.8 ? "Moderate" : "High") : "—"}
@@ -364,9 +407,42 @@ export function ReviewPage() {
             </div>
           </div>
           <div>
-            <h3>{issues.length ? `Review ${issues.length} issues` : "No tracking issues require review"}</h3>
+            <div className="tablist" role="tablist" aria-label="Review lists">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sideTab === "issues"}
+                id="review-tab-issues"
+                aria-controls="review-panel-issues"
+                onClick={() => setSideTab("issues")}
+              >
+                Issues {issues.length}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sideTab === "events"}
+                id="review-tab-events"
+                aria-controls="review-panel-events"
+                onClick={() => setSideTab("events")}
+              >
+                Events {trial.events.length}
+              </button>
+            </div>
+            {sideTab === "issues" ? (
+            <div role="tabpanel" id="review-panel-issues" aria-labelledby="review-tab-issues">
+            <h3>{issues.length ? `Issue ${Math.min(issueIndex + 1, issues.length)} of ${issues.length}` : "No tracking issues require review"}</h3>
             {issues.length === 0 ? (
               <p className="help">You can still inspect the trajectory manually.</p>
+            ) : currentIssue ? (
+              <article className="panel" style={{ marginBottom: 12 }}>
+                <strong>{currentIssue.kind.replace(/-/g, " ")}</strong>
+                <p className="help">
+                  {currentIssue.startSeconds.toFixed(1)}–{currentIssue.endSeconds.toFixed(1)} s
+                </p>
+                <p>{currentIssue.summary}</p>
+                <p className="help">{issueGuidance(currentIssue.kind)}</p>
+              </article>
             ) : null}
             <div className="row">
               <button
@@ -404,137 +480,70 @@ export function ReviewPage() {
                     seekTo(nearestSampleIndex(samples, issue.startSeconds));
                   }}
                 >
-                  <strong>{issue.kind.replace("-", " ")}</strong>
-                  <div className="help">{issue.summary}</div>
+                  <strong>{issue.kind.replace(/-/g, " ")}</strong>
+                  <div className="help">
+                    {issue.startSeconds.toFixed(1)}–{issue.endSeconds.toFixed(1)} s · {issue.summary}
+                    {issue.kind === "manual-correction" ? " · ◆ Manual" : ""}
+                  </div>
                 </button>
               ))}
             </div>
-            <h3>Events</h3>
+            </div>
+            ) : (
+            <div role="tabpanel" id="review-panel-events" aria-labelledby="review-tab-events">
+            <div className="row" style={{ marginBottom: 8 }}>
+              {(["all", "target", "nontarget", "manual"] as const).map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  className={eventFilter === filter ? "btn" : "btn-ghost"}
+                  onClick={() => setEventFilter(filter)}
+                >
+                  {filter === "all" ? "All events" : filter === "nontarget" ? "Non-target" : filter === "target" ? "Target" : "Manual"}
+                </button>
+              ))}
+            </div>
+            <h3>Events near {now.toFixed(2)} s</h3>
+            {nearbyEvents.length === 0 ? <p className="help">No events within 2 s of the current time.</p> : null}
+            <ul className="event-list">
+              {nearbyEvents.map((event) => (
+                <EventRow
+                  key={`near-${event.id}`}
+                  event={event}
+                  trialId={trial.id}
+                  targetHole={trial.arena?.targetHoleIndex ?? 0}
+                  editEventId={editEventId}
+                  editHole={editHole}
+                  editStart={editStart}
+                  editEnd={editEnd}
+                  setEditEventId={setEditEventId}
+                  setEditHole={setEditHole}
+                  setEditStart={setEditStart}
+                  setEditEnd={setEditEnd}
+                  addCorrection={addCorrection}
+                  seekToTime={seekToTime}
+                />
+              ))}
+            </ul>
+            <h3>All events</h3>
             <ul>
-              {trial.events.map((event) => (
-                <li key={event.id}>
-                  <button
-                    type="button"
-                    className="btn-ghost"
-                    onClick={() => seekToTime(event.startSeconds)}
-                  >
-                    {event.type} {event.holeIndex !== undefined ? `hole ${event.holeIndex + 1}` : ""} @ {event.startSeconds.toFixed(2)} s ({event.source})
-                  </button>
-                  {event.type === "escape-entry" && event.source === "automatic" ? (
-                    <span className="row">
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() =>
-                          addCorrection(trial.id, {
-                            timestampSeconds: event.startSeconds,
-                            kind: "event-edit",
-                            previousValue: event,
-                            correctedValue: { ...event, source: "automatic-confirmed", confidence: 1 },
-                          })
-                        }
-                      >
-                        Confirm escape
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-danger"
-                        onClick={() =>
-                          addCorrection(trial.id, {
-                            timestampSeconds: event.startSeconds,
-                            kind: "event-remove",
-                            previousValue: event,
-                            correctedValue: { id: event.id },
-                          })
-                        }
-                      >
-                        Reject escape
-                      </button>
-                    </span>
-                  ) : null}
-                  {event.type === "hole-investigation" || event.type === "target-investigation" ? (
-                    <span className="row">
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => {
-                          setEditEventId(event.id);
-                          setEditHole((event.holeIndex ?? 0) + 1);
-                          setEditStart(String(event.startSeconds));
-                          setEditEnd(String(event.endSeconds ?? event.startSeconds));
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-danger"
-                        onClick={() =>
-                          addCorrection(trial.id, {
-                            timestampSeconds: event.startSeconds,
-                            kind: "event-remove",
-                            previousValue: event,
-                            correctedValue: { id: event.id },
-                          })
-                        }
-                      >
-                        Reject
-                      </button>
-                    </span>
-                  ) : null}
-                  {editEventId === event.id ? (
-                    <div className="row" style={{ marginTop: "0.35rem" }}>
-                      <label>
-                        Hole
-                        <input
-                          type="number"
-                          min={1}
-                          max={20}
-                          value={editHole}
-                          onChange={(change) => setEditHole(Number(change.target.value))}
-                        />
-                      </label>
-                      <label>
-                        Start (s)
-                        <input value={editStart} onChange={(change) => setEditStart(change.target.value)} />
-                      </label>
-                      <label>
-                        End (s)
-                        <input value={editEnd} onChange={(change) => setEditEnd(change.target.value)} />
-                      </label>
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => {
-                          const startSeconds = Number(editStart);
-                          const endSeconds = Number(editEnd);
-                          if (!Number.isFinite(startSeconds) || !Number.isFinite(endSeconds)) return;
-                          const holeIndex = Math.max(0, Math.min(19, editHole - 1));
-                          const targetHole = trial.arena?.targetHoleIndex ?? 0;
-                          const edited: BehavioralEvent = {
-                            ...event,
-                            holeIndex,
-                            startSeconds,
-                            endSeconds,
-                            durationSeconds: Math.max(0, endSeconds - startSeconds),
-                            type: investigationTypeForHole(holeIndex, targetHole),
-                            source: event.source === "automatic" ? "automatic-confirmed" : "manual",
-                            evidence: [...event.evidence, "manually edited investigation"],
-                          };
-                          addCorrection(trial.id, {
-                            timestampSeconds: startSeconds,
-                            kind: "event-edit",
-                            previousValue: event,
-                            correctedValue: edited,
-                          });
-                          setEditEventId(null);
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-                  ) : null}
-                </li>
+              {filteredEvents.map((event) => (
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  trialId={trial.id}
+                  targetHole={trial.arena?.targetHoleIndex ?? 0}
+                  editEventId={editEventId}
+                  editHole={editHole}
+                  editStart={editStart}
+                  editEnd={editEnd}
+                  setEditEventId={setEditEventId}
+                  setEditHole={setEditHole}
+                  setEditStart={setEditStart}
+                  setEditEnd={setEditEnd}
+                  addCorrection={addCorrection}
+                  seekToTime={seekToTime}
+                />
               ))}
             </ul>
             <div className="row">
@@ -596,6 +605,8 @@ export function ReviewPage() {
                 Mark escape entry here
               </button>
             </div>
+            </div>
+            )}
           </div>
         </div>
         <QualityTimeline
@@ -617,6 +628,181 @@ export function ReviewPage() {
   );
 }
 
+function issueGuidance(kind: ReviewIssueKind): string {
+  switch (kind) {
+    case "missing-interval":
+      return "Mouse was not detected during this interval. Review whether this represents tracking loss or a behavioral event.";
+    case "low-confidence":
+      return "The tracker assigned a position with low confidence. Confirm the marker is on the animal.";
+    case "manual-correction":
+      return "A manual correction is recorded at this time.";
+    case "possible-escape":
+      return "Possible escape entry — confirm or reject in the Events tab.";
+    case "ambiguous-investigation":
+      return "This hole investigation is low-confidence. Confirm, edit, or reject it.";
+    case "large-jump":
+      return "The tracked position jumped farther than expected. Check whether the marker left the animal.";
+    default:
+      return "";
+  }
+}
+
+function EventRow({
+  event,
+  trialId,
+  targetHole,
+  editEventId,
+  editHole,
+  editStart,
+  editEnd,
+  setEditEventId,
+  setEditHole,
+  setEditStart,
+  setEditEnd,
+  addCorrection,
+  seekToTime,
+}: {
+  event: BehavioralEvent;
+  trialId: string;
+  targetHole: number;
+  editEventId: string | null;
+  editHole: number;
+  editStart: string;
+  editEnd: string;
+  setEditEventId: (id: string | null) => void;
+  setEditHole: (value: number) => void;
+  setEditStart: (value: string) => void;
+  setEditEnd: (value: string) => void;
+  addCorrection: (trialId: string, correction: Omit<import("../../domain/types").CorrectionRecord, "id" | "createdAt">) => void;
+  seekToTime: (time: number) => void;
+}) {
+  const hole = event.holeIndex !== undefined ? `Hole ${event.holeIndex + 1}` : "Event";
+  const kind =
+    event.type === "target-investigation"
+      ? "target investigation"
+      : event.type === "escape-entry"
+        ? "escape entry"
+        : "investigation";
+  return (
+    <li>
+      <button type="button" className="btn-ghost" onClick={() => seekToTime(event.startSeconds)}>
+        {hole} {kind}
+        <div className="help">
+          {event.startSeconds.toFixed(2)}
+          {event.endSeconds !== undefined ? `–${event.endSeconds.toFixed(2)}` : ""} s · {event.source === "manual" ? "◆ Manual" : "● Automatic"}
+        </div>
+      </button>
+      {event.type === "escape-entry" && event.source === "automatic" ? (
+        <span className="row">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() =>
+              addCorrection(trialId, {
+                timestampSeconds: event.startSeconds,
+                kind: "event-edit",
+                previousValue: event,
+                correctedValue: { ...event, source: "automatic-confirmed", confidence: 1 },
+              })
+            }
+          >
+            Confirm escape
+          </button>
+          <button
+            type="button"
+            className="btn-danger"
+            onClick={() =>
+              addCorrection(trialId, {
+                timestampSeconds: event.startSeconds,
+                kind: "event-remove",
+                previousValue: event,
+                correctedValue: { id: event.id },
+              })
+            }
+          >
+            Reject escape
+          </button>
+        </span>
+      ) : null}
+      {event.type === "hole-investigation" || event.type === "target-investigation" ? (
+        <span className="row">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              setEditEventId(event.id);
+              setEditHole((event.holeIndex ?? 0) + 1);
+              setEditStart(String(event.startSeconds));
+              setEditEnd(String(event.endSeconds ?? event.startSeconds));
+            }}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className="btn-danger"
+            onClick={() =>
+              addCorrection(trialId, {
+                timestampSeconds: event.startSeconds,
+                kind: "event-remove",
+                previousValue: event,
+                correctedValue: { id: event.id },
+              })
+            }
+          >
+            Reject
+          </button>
+        </span>
+      ) : null}
+      {editEventId === event.id ? (
+        <div className="row" style={{ marginTop: "0.35rem" }}>
+          <label>
+            Hole
+            <input type="number" min={1} max={20} value={editHole} onChange={(change) => setEditHole(Number(change.target.value))} />
+          </label>
+          <label>
+            Start (s)
+            <input value={editStart} onChange={(change) => setEditStart(change.target.value)} />
+          </label>
+          <label>
+            End (s)
+            <input value={editEnd} onChange={(change) => setEditEnd(change.target.value)} />
+          </label>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              const startSeconds = Number(editStart);
+              const endSeconds = Number(editEnd);
+              if (!Number.isFinite(startSeconds) || !Number.isFinite(endSeconds)) return;
+              const holeIndex = Math.max(0, Math.min(19, editHole - 1));
+              const edited: BehavioralEvent = {
+                ...event,
+                holeIndex,
+                startSeconds,
+                endSeconds,
+                durationSeconds: Math.max(0, endSeconds - startSeconds),
+                type: investigationTypeForHole(holeIndex, targetHole),
+                source: event.source === "automatic" ? "automatic-confirmed" : "manual",
+                evidence: [...event.evidence, "manually edited investigation"],
+              };
+              addCorrection(trialId, {
+                timestampSeconds: startSeconds,
+                kind: "event-edit",
+                previousValue: event,
+                correctedValue: edited,
+              });
+              setEditEventId(null);
+            }}
+          >
+            Save
+          </button>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
 function QualityTimeline({
   samples,
   duration,
@@ -630,12 +816,12 @@ function QualityTimeline({
     <div>
       <h3>Quality timeline</h3>
       <div className="vis-legend">
-        <span><i className="legend-swatch" style={{ background: "#1f4d5c" }} />Tracked</span>
-        <span><i className="legend-swatch" style={{ background: "#c4a35a" }} />Low confidence</span>
-        <span><i className="legend-swatch" style={{ background: "#6b2d2d" }} />Failed</span>
-        <span><i className="legend-swatch" style={{ background: "#888" }} />Hidden</span>
-        <span><i className="legend-swatch" style={{ background: "#3d2a78" }} />Manual</span>
-        <span><i className="legend-swatch" style={{ background: "#fff", borderStyle: "dashed" }} />Interpolated</span>
+        <span>● Automatic</span>
+        <span>◆ Manual</span>
+        <span>⋯ Interpolated</span>
+        <span>× Failed</span>
+        <span>Hidden</span>
+        <span>Low confidence</span>
       </div>
       <div
         className="timeline"

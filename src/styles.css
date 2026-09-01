@@ -574,6 +574,92 @@ input[type="text"], input[type="number"], select, textarea {
   gap: var(--space-3);
 }
 
+.results-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.compact-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric-info {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0 4px;
+  cursor: help;
+  font-size: 12px;
+}
+
+.track-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(16rem, 0.7fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.method-settings {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.method-settings > summary {
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+}
+
+.tablist {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-3);
+}
+
+.tablist [role="tab"] {
+  border: 0;
+  background: transparent;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+}
+
+.tablist [role="tab"][aria-selected="true"] {
+  color: var(--text-primary);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+.review-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.review-nav-group {
+  display: grid;
+  gap: 4px;
+}
+
+.event-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.strategy-override {
+  border: 0;
+  padding: 0;
+  margin: var(--space-3) 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 .metric {
   border: 0;
   border-radius: var(--radius-sm);
@@ -816,9 +902,10 @@ details.advanced {
 
 .results-figures {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(14rem, 0.7fr);
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
   gap: var(--space-5);
   margin: var(--space-5) 0;
+  align-items: start;
 }
 
 .btn, .btn-secondary, .btn-ghost, .btn-danger, .step, .trial-item, .issue {
@@ -846,8 +933,14 @@ details.advanced {
   .sidebar[data-collapsed="true"] { display: none; }
   .sidebar-toggle { display: inline-flex; }
   .grid-2,
-  .results-figures { grid-template-columns: 1fr; }
+  .results-figures,
+  .track-layout { grid-template-columns: 1fr; }
+  .results-metrics { grid-template-columns: 1fr 1fr; }
   .workspace-footer { position: static; }
+}
+
+@media (max-width: 640px) {
+  .results-metrics { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

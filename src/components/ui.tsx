@@ -84,25 +84,41 @@ export function MetricCard({
   value,
   unit,
   missing,
+  definition,
+  action,
 }: {
   label: string;
   value?: number | null | string;
   unit?: string;
   missing?: string;
+  definition?: string;
+  action?: ReactNode;
 }) {
   const empty = value === null || value === undefined || value === "";
   return (
     <div className="metric">
-      <dt>{label}</dt>
+      <dt>
+        <span>{label}</span>
+        {definition ? (
+          <button type="button" className="metric-info" title={definition} aria-label={`${label}: ${definition}`}>
+            ⓘ
+          </button>
+        ) : null}
+      </dt>
       <dd>
         {empty ? (
           <span className="na">{missing ?? "Unavailable"}</span>
         ) : (
           <>
-            {typeof value === "number" ? (Number.isInteger(value) ? value : value.toFixed(2)) : value}
+            {typeof value === "number"
+              ? Number.isInteger(value)
+                ? value.toLocaleString()
+                : value.toFixed(2)
+              : value}
             {unit ? ` ${unit}` : ""}
           </>
         )}
+        {action}
       </dd>
     </div>
   );

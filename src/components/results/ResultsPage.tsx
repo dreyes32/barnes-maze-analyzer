@@ -16,6 +16,7 @@ export function ResultsPage() {
   const overrideStrategy = useSessionStore((state) => state.overrideStrategy);
   const markReviewed = useSessionStore((state) => state.markReviewed);
   const setError = useSessionStore((state) => state.setError);
+  const setStage = useSessionStore((state) => state.setStage);
 
   const exportCsv = () => {
     downloadTextFile(`${safeFilename(session.name)}-trial-summary.csv`, trialSummaryCsv(session), "text/csv");
@@ -84,40 +85,81 @@ export function ResultsPage() {
         </section>
       ) : null}
       <section className="card" id="results-report">
-        <dl className="metrics">
-          <MetricCard label="Primary latency" value={trial.metrics?.primaryLatencySeconds} unit="s" missing="No target investigation" />
-          <MetricCard label="Total latency" value={trial.metrics?.totalLatencySeconds} unit="s" missing="Escape not confirmed" />
-          <MetricCard label="Primary errors" value={trial.metrics?.primaryErrors} />
-          <MetricCard label="Total errors" value={trial.metrics?.totalErrors} />
+        <dl className="metrics results-metrics">
+          <MetricCard
+            label="Primary latency"
+            value={trial.metrics?.primaryLatencySeconds}
+            unit="s"
+            missing="No target investigation"
+            definition="Time from trial start to the first valid investigation of the target hole."
+          />
+          <MetricCard
+            label="Total latency"
+            value={trial.metrics?.totalLatencySeconds}
+            unit="s"
+            missing="Escape not confirmed"
+            definition="Time from trial start to a confirmed escape into the target hole."
+            action={
+              trial.metrics?.totalLatencySeconds == null ? (
+                <button type="button" className="btn-ghost" onClick={() => setStage("review")}>
+                  Review escape
+                </button>
+              ) : null
+            }
+          />
+          <MetricCard
+            label="Primary errors"
+            value={trial.metrics?.primaryErrors}
+            definition="Wrong-hole investigations occurring before the first valid target investigation."
+          />
+          <MetricCard
+            label="Total errors"
+            value={trial.metrics?.totalErrors}
+            definition="Non-target hole investigations across the analyzed trial according to the configured event definition."
+          />
           <MetricCard
             label="Path length"
             value={trial.metrics?.pathLengthCm}
             unit="cm"
-            missing="Enter platform diameter"
+            missing="Physical calibration required"
+            action={
+              trial.metrics?.pathLengthCm == null ? (
+                <button type="button" className="btn-ghost" onClick={() => setStage("arena")}>
+                  Set diameter
+                </button>
+              ) : null
+            }
           />
           <MetricCard
             label="Mean speed"
             value={trial.metrics?.meanSpeedCmPerSec}
             unit="cm/s"
-            missing="Enter platform diameter"
+            missing="Physical calibration required"
           />
-          <MetricCard label="Target quadrant time" value={trial.metrics?.targetQuadrantTimeSeconds} unit="s" />
-          <MetricCard label="Target quadrant" value={trial.metrics?.targetQuadrantPercent} unit="%" />
+          <MetricCard
+            label="Target quadrant"
+            value={
+              trial.metrics?.targetQuadrantTimeSeconds != null && trial.metrics.targetQuadrantPercent != null
+                ? `${trial.metrics.targetQuadrantTimeSeconds.toFixed(2)} s · ${trial.metrics.targetQuadrantPercent.toFixed(1)}%`
+                : undefined
+            }
+            definition="Time spent in the 90° sector centered on the target hole."
+          />
           <MetricCard label="Strategy" value={trial.strategy?.effective} />
         </dl>
-        {trial.metrics?.unavailableReasons.map((reason) => (
-          <Banner key={reason} kind="warn">{reason}</Banner>
-        ))}
         {trial.arena && trial.tracking ? (
           <div className="results-figures">
             <div id="figure-trajectory" className="figure-primary">
               <h3>Trajectory</h3>
+              <p className="help">Effective reviewed path</p>
               <TrajectoryPlot
                 arena={trial.arena}
                 samples={trial.tracking.effectiveSamples}
                 title={`${trial.source.fileName} trajectory`}
+                subtitle={meta || undefined}
               />
               <div className="row no-print">
+                <span className="micro">Export figure</span>
                 <button
                   type="button"
                   className="btn-secondary"
@@ -126,7 +168,7 @@ export function ResultsPage() {
                     if (svg) downloadSvg(svg, `${trial.source.fileName}-trajectory.svg`);
                   }}
                 >
-                  Export SVG
+                  SVG
                 </button>
                 <button
                   type="button"
@@ -136,12 +178,13 @@ export function ResultsPage() {
                     if (svg) void downloadPngFromSvg(svg, `${trial.source.fileName}-trajectory.png`);
                   }}
                 >
-                  Export PNG
+                  PNG
                 </button>
               </div>
             </div>
             <section>
-              <h3>Tracking quality</h3>
+              <h3>Occupancy</h3>
+              <p className="help">Valid automatic/manual tracking only; interpolated points excluded</p>
               <OccupancyHeatmap arena={trial.arena} samples={trial.tracking.effectiveSamples} />
             </section>
           </div>
@@ -159,26 +202,36 @@ export function ResultsPage() {
           <section>
             <h3>Search strategy</h3>
             <p>
-              Automatic: <strong>{trial.strategy.automatic}</strong>
-              {trial.strategy.overridden ? ` · Reviewer override: ${trial.strategy.effective}` : ""}
+              Automatic classification: <strong>{trial.strategy.automatic}</strong>
+              {trial.strategy.overridden
+                ? ` · Researcher: ${trial.strategy.effective}`
+                : " · Researcher classification: Same as automatic"}
             </p>
+            <p>
+              Effective: <strong>{trial.strategy.effective}</strong>
+            </p>
+            <fieldset className="strategy-override">
+              <legend>Researcher classification</legend>
+              {(["spatial", "serial", "random"] as SearchStrategyLabel[]).map((label) => (
+                <label key={label}>
+                  <input
+                    type="radio"
+                    name="strategy-override"
+                    checked={trial.strategy?.effective === label}
+                    onChange={() => overrideStrategy(trial.id, label)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </fieldset>
+            <h4>Why {trial.strategy.effective}?</h4>
+            <p className="help">{trial.strategy.reasoning[0]}</p>
+            <h4>Evidence</h4>
             <ul>
-              {trial.strategy.reasoning.map((line) => (
+              {trial.strategy.reasoning.slice(1).map((line) => (
                 <li key={line}>{line}</li>
               ))}
             </ul>
-            <div className="row">
-              {(["spatial", "serial", "random"] as SearchStrategyLabel[]).map((label) => (
-                <button
-                  key={label}
-                  type="button"
-                  className={trial.strategy?.effective === label ? "btn" : "btn-secondary"}
-                  onClick={() => overrideStrategy(trial.id, label)}
-                >
-                  Use {label}
-                </button>
-              ))}
-            </div>
           </section>
         ) : null}
         <LearningCurves />
