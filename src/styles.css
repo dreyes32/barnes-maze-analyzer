@@ -301,6 +301,22 @@ button, input, select, textarea {
   gap: 2px;
 }
 
+.trial-nav-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.trial-nav-row .trial-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.trial-nav-row .menu {
+  flex: 0 0 auto;
+}
+
 .trial-item {
   width: 100%;
   text-align: left;
@@ -683,16 +699,14 @@ details.advanced {
 }
 
 .menu-panel {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 4px);
+  position: fixed;
   min-width: 13rem;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-md);
   padding: 4px;
-  z-index: 20;
+  z-index: 30;
 }
 
 .menu-panel button,

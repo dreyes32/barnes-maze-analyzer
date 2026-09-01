@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 export function Menu({
   label,
@@ -11,6 +11,7 @@ export function Menu({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const buttonId = useId();
   const menuId = useId();
 
@@ -30,6 +31,35 @@ export function Menu({
     };
   }, [open]);
 
+  useLayoutEffect(() => {
+    if (!open) return;
+    const button = ref.current?.querySelector("button");
+    const panel = panelRef.current;
+    if (!button || !panel) return;
+
+    const place = () => {
+      const br = button.getBoundingClientRect();
+      const width = panel.offsetWidth;
+      const height = panel.offsetHeight;
+      const margin = 8;
+      let left = br.right - width;
+      if (left < margin) left = br.left;
+      if (left + width > window.innerWidth - margin) {
+        left = Math.max(margin, window.innerWidth - width - margin);
+      }
+      let top = br.bottom + 4;
+      if (top + height > window.innerHeight - margin) {
+        top = Math.max(margin, br.top - height - 4);
+      }
+      panel.style.left = `${Math.round(left)}px`;
+      panel.style.top = `${Math.round(top)}px`;
+    };
+
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [open]);
+
   return (
     <div className="menu" ref={ref}>
       <button
@@ -45,7 +75,14 @@ export function Menu({
         {label}
       </button>
       {open ? (
-        <div className="menu-panel" role="menu" id={menuId} aria-labelledby={buttonId} onClick={() => setOpen(false)}>
+        <div
+          ref={panelRef}
+          className="menu-panel"
+          role="menu"
+          id={menuId}
+          aria-labelledby={buttonId}
+          onClick={() => setOpen(false)}
+        >
           {children}
         </div>
       ) : null}

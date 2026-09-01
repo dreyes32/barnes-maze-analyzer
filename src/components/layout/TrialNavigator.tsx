@@ -24,7 +24,7 @@ export function TrialNavigator({ collapsed = false }: { collapsed?: boolean }) {
     const animal = trial.experimentMetadata.animalId;
     return (
       <li key={trial.id}>
-        <div className="row" style={{ alignItems: "stretch" }}>
+        <div className="trial-nav-row">
           <button
             type="button"
             className="trial-item"
