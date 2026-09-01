@@ -1,4 +1,5 @@
-import { useSessionStore } from "../../state/sessionStore";
+import { workflowStepCompletion } from "../../domain/session";
+import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import type { WorkflowStage } from "../../domain/types";
 
 const STEPS: Array<{ id: WorkflowStage; label: string }> = [
@@ -13,14 +14,9 @@ export function StepIndicator() {
   const session = useSessionStore((state) => state.session);
   const setStage = useSessionStore((state) => state.setStage);
   const stage = session.currentStage;
+  const trial = currentTrialSelector(session);
   const trials = session.trials;
-  const complete = {
-    videos: trials.length > 0,
-    arena: trials.some((trial) => trial.arena),
-    track: trials.some((trial) => trial.tracking),
-    review: trials.some((trial) => trial.reviewStatus === "reviewed" || trial.reviewStatus === "complete"),
-    results: trials.some((trial) => trial.metrics),
-  };
+  const complete = workflowStepCompletion(trial);
 
   return (
     <nav className="steps" aria-label="Analysis workflow">

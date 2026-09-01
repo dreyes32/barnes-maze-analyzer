@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createEmptySession, createTrial, createTrialGroup, removeTrialFromSession } from "../../src/domain/session";
+import {
+  createEmptySession,
+  createTrial,
+  createTrialGroup,
+  removeTrialFromSession,
+  workflowStepCompletion,
+} from "../../src/domain/session";
 import { parseSessionFile } from "../../src/domain/schemas";
 import { sessionToPortableJson, parsePortableSession } from "../../src/export/analysisJson";
 import type { VideoSourceMetadata } from "../../src/domain/types";
@@ -54,6 +60,50 @@ describe("session organization", () => {
     expect(parsed.trialGroups).toHaveLength(1);
     expect(parsed.trialGroups?.[0]?.name).toBe("Control");
     expect(parsed.trials[0].groupId).toBe(group.id);
+  });
+
+  it("resets workflow completion to the selected trial", () => {
+    const finished = createTrial(source("test50.mp4"));
+    finished.arena = {
+      platformCenterPx: { x: 1, y: 1 },
+      platformRadiusPx: 10,
+      holeCentersPx: Array.from({ length: 20 }, () => ({ x: 1, y: 1 })),
+      holeRadiusPx: 2,
+      targetHoleIndex: 0,
+      geometrySource: "manual",
+    };
+    finished.tracking = {
+      rawSamples: [{ timestampSeconds: 0, confidence: 1, status: "tracked", source: "automatic" }],
+      effectiveSamples: [],
+      analysisSamplingHz: 12,
+      startedAt: "2026-01-01T00:00:00.000Z",
+      finishedAt: "2026-01-01T00:00:00.000Z",
+    };
+    finished.reviewStatus = "complete";
+    finished.metrics = { unavailableReasons: [] };
+
+    const fresh = createTrial(source("test51.mp4"));
+    expect(workflowStepCompletion(finished)).toEqual({
+      videos: true,
+      arena: true,
+      track: true,
+      review: true,
+      results: true,
+    });
+    expect(workflowStepCompletion(fresh)).toEqual({
+      videos: true,
+      arena: false,
+      track: false,
+      review: false,
+      results: false,
+    });
+    expect(workflowStepCompletion(undefined)).toEqual({
+      videos: false,
+      arena: false,
+      track: false,
+      review: false,
+      results: false,
+    });
   });
 
   it("opens older sessions that omit trial groups", () => {

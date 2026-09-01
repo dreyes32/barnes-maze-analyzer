@@ -146,7 +146,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const next: AnalysisSession = {
       ...session,
       trials: [...session.trials, ...trials],
-      currentTrialId: session.currentTrialId ?? trials[0]?.id,
+      currentTrialId: trials[0]?.id ?? session.currentTrialId,
+      currentStage: trials[0] ? "videos" : session.currentStage,
       updatedAt: nowIso(),
     };
     set({ session: next });

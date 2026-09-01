@@ -1,6 +1,13 @@
 import { DEFAULT_PARAMETERS, cloneParameters } from "./defaults";
 import { createId, nowIso } from "./ids";
-import { SCHEMA_VERSION, type AnalysisSession, type ExperimentMetadata, type TrialRecord, type VideoSourceMetadata } from "./types";
+import {
+  SCHEMA_VERSION,
+  type AnalysisSession,
+  type ExperimentMetadata,
+  type TrialRecord,
+  type VideoSourceMetadata,
+  type WorkflowStage,
+} from "./types";
 
 export function createEmptySession(name = "Untitled session"): AnalysisSession {
   const createdAt = nowIso();
@@ -89,6 +96,17 @@ export function removeTrialFromSession(session: AnalysisSession, trialId: string
     ...session,
     trials,
     currentTrialId: session.currentTrialId === trialId ? trials[0]?.id : session.currentTrialId,
+  };
+}
+
+/** Workflow checkmarks and locks for the selected trial only, not the whole session. */
+export function workflowStepCompletion(trial?: TrialRecord): Record<WorkflowStage, boolean> {
+  return {
+    videos: Boolean(trial),
+    arena: Boolean(trial?.arena),
+    track: Boolean(trial?.tracking && trial.tracking.rawSamples.length > 0),
+    review: trial?.reviewStatus === "reviewed" || trial?.reviewStatus === "complete",
+    results: Boolean(trial?.metrics),
   };
 }
 
