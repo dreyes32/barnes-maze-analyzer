@@ -889,14 +889,42 @@ details.advanced {
   font-size: 14px;
 }
 
-.setup-step {
-  width: 100%;
-  justify-content: flex-start;
-  padding: 4px 6px;
-  font-weight: 400;
+.setup-list li {
+  padding: 0;
 }
 
-.setup-step[aria-current="step"] {
+.setup-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 6px 0;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 400;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+button.setup-step {
+  cursor: pointer;
+}
+
+button.setup-step:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+button.setup-step:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+button.setup-step[aria-current="step"] {
   font-weight: 600;
 }
 

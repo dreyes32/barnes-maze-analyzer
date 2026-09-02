@@ -353,7 +353,7 @@ export function ArenaPage() {
             <li>
               <button
                 type="button"
-                className="btn-ghost setup-step"
+                className="setup-step"
                 onClick={() => goToStep("platform-center")}
                 aria-current={step === "platform-center" ? "step" : undefined}
               >
@@ -363,7 +363,7 @@ export function ArenaPage() {
             <li>
               <button
                 type="button"
-                className="btn-ghost setup-step"
+                className="setup-step"
                 onClick={() => goToStep("platform-edge")}
                 disabled={!centerDone && !arena}
                 aria-current={step === "platform-edge" ? "step" : undefined}
@@ -374,7 +374,7 @@ export function ArenaPage() {
             <li>
               <button
                 type="button"
-                className="btn-ghost setup-step"
+                className="setup-step"
                 onClick={() => goToStep("first-hole")}
                 disabled={!edgeDone && !arena}
                 aria-current={step === "first-hole" ? "step" : undefined}
@@ -383,10 +383,14 @@ export function ArenaPage() {
               </button>
             </li>
             <li>
-              <StepMark done={targetDone} /> Target hole
+              <span className="setup-step">
+                <StepMark done={targetDone} /> Target hole
+              </span>
             </li>
             <li>
-              <StepMark done={calibrated} /> Physical scale
+              <span className="setup-step">
+                <StepMark done={calibrated} /> Physical scale
+              </span>
             </li>
           </ol>
           <p className="help">Click a completed step to redo it. Later steps are cleared.</p>
