@@ -65,10 +65,21 @@ Timestamps come from the file timebase or from `requestVideoFrameCallback` media
 
 Do **not** compute `frame / 30`. `test51.mp4` is `15000/1001 ≈ 14.985` fps. If the source appears variable-frame-rate, timestamps are authoritative and frame indices are labeled approximate.
 
+## Optional agent interface
+
+An optional **local stdio MCP server** (`mcp/`) can query completed `.barnes.json` exports. It is a separate Node process, not part of the static web app, Vercel deployment, or IndexedDB. It never opens raw video.
+
+```text
+Raw videos → browser analyzer → .barnes.json → local MCP server → MCP-compatible agent
+```
+
+Scientific corrections stay in the web UI. The MCP layer only reads derived results and may write a sandboxed trial-summary CSV.
+
 ## What is not in this architecture
 
 - Authentication / accounts
 - Hosted vision APIs
 - Required Python or Docker for scientists
-- A backend
+- A backend for the analyzer
 - Fake ML classifiers
+- An LLM or cloud MCP service inside this repository

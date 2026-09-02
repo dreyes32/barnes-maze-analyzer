@@ -1,0 +1,244 @@
+{
+  "id": "session-main",
+  "name": "Main experiment",
+  "schemaVersion": 1,
+  "appVersion": "1.0.0",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-02T00:00:00.000Z",
+  "currentStage": "results",
+  "parameters": {
+    "sampling": { "targetObservationsPerSecond": 12 },
+    "tracking": {
+      "backgroundFrameCount": 24,
+      "foregroundThreshold": "auto",
+      "morphologyRadiusPx": 2,
+      "platformMarginPx": 18
+    },
+    "cleanup": {
+      "gapFill": "short",
+      "maxGapSeconds": 0.25,
+      "smoothing": "none",
+      "smoothingWindow": 5,
+      "outlierRule": "robust-speed",
+      "outlierMultiplier": 6
+    },
+    "events": {
+      "investigationRadiusCm": 3.5,
+      "fallbackInvestigationRadiusPx": 18,
+      "minInvestigationSeconds": 0.2,
+      "separationSeconds": 0.4,
+      "hysteresisFactor": 1.3,
+      "escapeDisappearanceSeconds": 0.8,
+      "escapeProximityCm": 5
+    },
+    "strategy": {
+      "spatialMaxPrimaryErrors": 2,
+      "spatialMinPathEfficiency": 0.45,
+      "serialMinAdjacencyRatio": 0.55,
+      "serialMinInvestigations": 4,
+      "serialMinPerimeterOccupancy": 0.55
+    }
+  },
+  "trials": [
+    {
+      "id": "trial-c1",
+      "source": {
+        "fileName": "c1.mp4",
+        "fileSize": 1000,
+        "width": 640,
+        "height": 480,
+        "durationSeconds": 60,
+        "fps": 30,
+        "sourceFingerprint": "fixture:c1.mp4"
+      },
+      "experimentMetadata": { "animalId": "M1", "cohort": "Control", "day": "2", "trial": "1" },
+      "arena": {
+        "platformCenterPx": { "x": 320, "y": 240 },
+        "platformRadiusPx": 180,
+        "holeCentersPx": [
+          { "x": 320, "y": 240 }, { "x": 321, "y": 240 }, { "x": 322, "y": 240 }, { "x": 323, "y": 240 },
+          { "x": 324, "y": 240 }, { "x": 325, "y": 240 }, { "x": 326, "y": 240 }, { "x": 327, "y": 240 },
+          { "x": 328, "y": 240 }, { "x": 329, "y": 240 }, { "x": 330, "y": 240 }, { "x": 331, "y": 240 },
+          { "x": 332, "y": 240 }, { "x": 333, "y": 240 }, { "x": 334, "y": 240 }, { "x": 335, "y": 240 },
+          { "x": 336, "y": 240 }, { "x": 337, "y": 240 }, { "x": 338, "y": 240 }, { "x": 339, "y": 240 }
+        ],
+        "holeRadiusPx": 8,
+        "targetHoleIndex": 5,
+        "platformDiameterCm": 91,
+        "geometrySource": "assisted"
+      },
+      "tracking": {
+        "rawSamples": [{ "timestampSeconds": 0, "confidence": 0.9, "status": "tracked", "source": "automatic", "body": { "x": 1, "y": 1 } }],
+        "effectiveSamples": [{ "timestampSeconds": 0, "confidence": 0.9, "status": "tracked", "source": "automatic", "body": { "x": 1, "y": 1 } }],
+        "analysisSamplingHz": 12,
+        "startedAt": "2026-01-01T00:00:00.000Z",
+        "finishedAt": "2026-01-01T00:00:01.000Z",
+        "status": "ready"
+      },
+      "corrections": [],
+      "events": [],
+      "metrics": {
+        "primaryLatencySeconds": 10,
+        "totalLatencySeconds": 20,
+        "primaryErrors": 0,
+        "totalErrors": 1,
+        "pathLengthCm": 100,
+        "meanSpeedCmPerSec": 5,
+        "targetQuadrantTimeSeconds": 4,
+        "targetQuadrantPercent": 20,
+        "unavailableReasons": []
+      },
+      "strategy": {
+        "automatic": "spatial",
+        "effective": "spatial",
+        "overridden": false,
+        "features": {
+          "primaryErrors": 1,
+          "primaryLatencySeconds": 10,
+          "pathEfficiency": 0.5,
+          "perimeterOccupancy": 0.4,
+          "centerCrossings": 1,
+          "uniqueHolesInvestigated": 3,
+          "transitionCount": 4,
+          "adjacentTransitionCount": 2,
+          "adjacencyRatio": 0.5,
+          "directionalConsistency": 0.2
+        },
+        "reasoning": ["Automatic spatial; final spatial."]
+      },
+      "qc": {
+        "observationsAttempted": 1,
+        "tracked": 1,
+        "lowConfidence": 0,
+        "failed": 0,
+        "hidden": 0,
+        "interpolated": 0,
+        "manual": 0,
+        "largestMissingIntervalSeconds": 0,
+        "trackingCoveragePercent": 100,
+        "automaticTrackingCoveragePercent": 100,
+        "effectiveTrajectoryCoveragePercent": 100,
+        "warnings": []
+      },
+      "reviewStatus": "complete"
+    },
+    {
+      "id": "trial-c2",
+      "source": {
+        "fileName": "c2.mp4",
+        "fileSize": 1000,
+        "width": 640,
+        "height": 480,
+        "durationSeconds": 60,
+        "fps": 30,
+        "sourceFingerprint": "fixture:c2.mp4"
+      },
+      "experimentMetadata": { "animalId": "M2", "cohort": "Control", "day": "2", "trial": "1" },
+      "corrections": [],
+      "events": [],
+      "metrics": {
+        "primaryLatencySeconds": 20,
+        "totalLatencySeconds": 30,
+        "primaryErrors": 2,
+        "totalErrors": 3,
+        "pathLengthCm": 140,
+        "meanSpeedCmPerSec": 4,
+        "targetQuadrantTimeSeconds": 3,
+        "targetQuadrantPercent": 15,
+        "unavailableReasons": []
+      },
+      "strategy": {
+        "automatic": "serial",
+        "effective": "spatial",
+        "overridden": true,
+        "features": {
+          "primaryErrors": 2,
+          "primaryLatencySeconds": 20,
+          "pathEfficiency": 0.4,
+          "perimeterOccupancy": 0.6,
+          "centerCrossings": 0,
+          "uniqueHolesInvestigated": 5,
+          "transitionCount": 6,
+          "adjacentTransitionCount": 4,
+          "adjacencyRatio": 0.66,
+          "directionalConsistency": 0.1
+        },
+        "reasoning": ["Automatic serial; final spatial."]
+      },
+      "qc": {
+        "observationsAttempted": 2,
+        "tracked": 1,
+        "lowConfidence": 1,
+        "failed": 0,
+        "hidden": 0,
+        "interpolated": 0,
+        "manual": 0,
+        "largestMissingIntervalSeconds": 0,
+        "trackingCoveragePercent": 100,
+        "automaticTrackingCoveragePercent": 100,
+        "effectiveTrajectoryCoveragePercent": 100,
+        "warnings": []
+      },
+      "reviewStatus": "needs-review"
+    },
+    {
+      "id": "trial-t1",
+      "source": {
+        "fileName": "t1.mp4",
+        "fileSize": 1000,
+        "width": 640,
+        "height": 480,
+        "durationSeconds": 60,
+        "fps": 30,
+        "sourceFingerprint": "fixture:t1.mp4"
+      },
+      "experimentMetadata": { "animalId": "M3", "cohort": "Treatment", "day": "3", "trial": "1" },
+      "corrections": [],
+      "events": [],
+      "metrics": {
+        "primaryLatencySeconds": null,
+        "totalLatencySeconds": 40,
+        "primaryErrors": 4,
+        "totalErrors": 4,
+        "pathLengthCm": null,
+        "meanSpeedCmPerSec": null,
+        "targetQuadrantTimeSeconds": 2,
+        "targetQuadrantPercent": 10,
+        "unavailableReasons": ["Primary latency is missing because no target-hole investigation was detected."]
+      },
+      "strategy": {
+        "automatic": "random",
+        "effective": "random",
+        "overridden": false,
+        "features": {
+          "primaryErrors": 4,
+          "primaryLatencySeconds": null,
+          "pathEfficiency": 0.2,
+          "perimeterOccupancy": 0.3,
+          "centerCrossings": 3,
+          "uniqueHolesInvestigated": 6,
+          "transitionCount": 8,
+          "adjacentTransitionCount": 2,
+          "adjacencyRatio": 0.25,
+          "directionalConsistency": 0.05
+        },
+        "reasoning": ["Automatic random; final random."]
+      },
+      "qc": {
+        "observationsAttempted": 3,
+        "tracked": 2,
+        "lowConfidence": 0,
+        "failed": 1,
+        "hidden": 0,
+        "interpolated": 0,
+        "manual": 0,
+        "largestMissingIntervalSeconds": 1.2,
+        "trackingCoveragePercent": 66,
+        "automaticTrackingCoveragePercent": 66,
+        "effectiveTrajectoryCoveragePercent": 66,
+        "warnings": []
+      },
+      "reviewStatus": "reviewed"
+    }
+  ]
+}

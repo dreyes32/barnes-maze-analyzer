@@ -1,0 +1,10 @@
+{
+  "name": "barnes-maze-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Optional local MCP server for completed Barnes maze analyses",
+  "dependencies": {
+    "zod": "4.2.1"
+  }
+}

@@ -18,9 +18,15 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "outputs": "vite-node scripts/write-example-outputs.ts",
-    "ci": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "mcp": "tsx mcp/src/index.ts",
+    "mcp:typecheck": "tsc -p mcp/tsconfig.json --pretty false",
+    "mcp:test": "vitest run --config mcp/vitest.config.ts",
+    "mcp:smoke": "tsx mcp/scripts/smoke.ts",
+    "mcp:build": "npm run mcp:typecheck",
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run build && npm run mcp:typecheck && npm run mcp:test && npm run mcp:smoke"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
     "dexie": "4.2.1",
     "exceljs": "4.4.0",
     "jszip": "3.10.1",
@@ -30,6 +36,7 @@
     "zustand": "5.0.8"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
     "@axe-core/playwright": "4.10.2",
     "@eslint/js": "9.33.0",
     "@playwright/test": "1.55.0",
@@ -45,6 +52,7 @@
     "eslint-plugin-react-refresh": "0.4.20",
     "globals": "16.3.0",
     "jsdom": "26.1.0",
+    "tsx": "4.20.5",
     "typescript": "5.8.3",
     "typescript-eslint": "8.41.0",
     "vite": "6.3.5",

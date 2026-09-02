@@ -43,3 +43,6 @@ __pycache__/
 *.pyc
 .venv/
 .vercel
+
+# Optional MCP CSV exports
+mcp-exports/

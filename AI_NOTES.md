@@ -2,7 +2,7 @@
 
 ## Tools / models used
 
-This submission was implemented in **Cursor** with an agentic coding assistant (Cursor Grok 4.6) operating in the local workspace. Repository-level guidance lives in `docs/architecture.md`, `docs/engineering.md`, and `docs/ai-development-log.md`. There is no custom MCP server and no third-party vision API.
+This submission was implemented in **Cursor** with an agentic coding assistant (Cursor Grok 4.6) operating in the local workspace. Repository-level guidance lives in `docs/architecture.md`, `docs/engineering.md`, and `docs/ai-development-log.md`. There is no third-party vision API. An optional local MCP server can query completed `.barnes.json` exports; it does not analyze video.
 
 I directed the work: official Salk brief first, then domain algorithms and tests, then UI, then persistence/export. Generated code was edited when it violated scientific or product rules (timebase, interpolation, escape inference, demo labeling).
 

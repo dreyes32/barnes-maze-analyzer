@@ -43,6 +43,7 @@ For a developer:
 
 ```bash
 npm ci
+npm ci --prefix mcp
 npm run dev
 ```
 
@@ -156,7 +157,76 @@ Sample-video validation is documented under Known limitations; full-video CV is 
 - No DeepLabCut / SLEAP import in this version.
 - No trained search-strategy classifier.
 - No inter-rater scoring UI.
-- No MCP server.
+- The optional MCP server queries completed derived analyses; it intentionally does not expose raw video processing or scientific corrections to agents.
+
+## Optional agent interface
+
+Barnes Maze Analyzer includes an optional local MCP server for querying completed analyses through MCP-compatible AI clients. The server operates on `.barnes.json` exports, not video files.
+
+**The MCP extension is not required to use the analyzer.** The normal scientist workflow remains the web UI.
+
+```text
+Videos → browser analysis → .barnes.json → MCP → agent
+```
+
+The MCP server does not receive or inspect Barnes maze video files. It operates only on completed `.barnes.json` analysis exports explicitly configured at startup.
+
+- No API key.
+- No network service required.
+- No LLM is embedded in the MCP server.
+- MCP host/model access to returned analysis data depends on the user's chosen MCP client.
+
+Human web UI: track the animal, select the target, correct body/head, confirm escape, edit investigations, override strategy.
+
+Agent: read results, summarize, compare, filter, export a trial-summary CSV.
+
+Example requests:
+
+```text
+"What trials still need review?"
+
+"Summarize search strategies for Cohort B."
+
+"Compare primary latency and errors between Control and Treatment."
+
+"Export Day 3 as a CSV."
+```
+
+```bash
+npm run mcp -- --analysis ./mcp/fixtures/sample.barnes.json
+```
+
+Directory of completed exports and a custom CSV folder:
+
+```bash
+npm run mcp -- --analysis ./path/to/completed-analyses --export-dir ./mcp-exports
+```
+
+Inspect tools without a host:
+
+```bash
+npx @modelcontextprotocol/inspector npm run mcp -- --analysis ./mcp/fixtures/sample.barnes.json
+```
+
+Generic local stdio config (replace the placeholders):
+
+```json
+{
+  "mcpServers": {
+    "barnes-maze": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "/absolute/path/to/barnes-maze-analyzer/mcp/src/index.ts",
+        "--analysis",
+        "/absolute/path/to/analysis.barnes.json"
+      ]
+    }
+  }
+}
+```
+
+More detail: [`mcp/README.md`](mcp/README.md). Streamable HTTP is a possible later extension of the same factory; this release is stdio only.
 
 ## Future improvements
 
