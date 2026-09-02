@@ -8,7 +8,7 @@ import {
   scaleHoleRing,
   transformArena,
 } from "../../domain/geometry";
-import { darkestLocalCenter, estimateBrightCircle, rgbaToGray } from "../../domain/image";
+import { estimateBrightCircle, rgbaToGray } from "../../domain/image";
 import type { ArenaGeometry, Point } from "../../domain/types";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
@@ -71,6 +71,7 @@ export function ArenaPage() {
   const session = useSessionStore((state) => state.session);
   const trial = currentTrialSelector(session);
   const setArena = useSessionStore((state) => state.setArena);
+  const clearArena = useSessionStore((state) => state.clearArena);
   const reuseArena = useSessionStore((state) => state.reuseArena);
   const setStage = useSessionStore((state) => state.setStage);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -214,44 +215,58 @@ export function ArenaPage() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const suggestPlatform = () => {
-    const video = videoRef.current;
-    if (!video || !trial) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0);
-    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const gray = rgbaToGray(image.data, canvas.width, canvas.height);
-    const circle = estimateBrightCircle(gray);
-    if (!circle) return;
-    setDraftCenter({ x: circle.x, y: circle.y });
-    setDraftEdge({ x: circle.x + circle.radius, y: circle.y });
-    setStep("first-hole");
+  const draftsFromArena = (current: ArenaGeometry) => {
+    setDraftCenter(current.platformCenterPx);
+    setDraftEdge({
+      x: current.platformCenterPx.x + current.platformRadiusPx,
+      y: current.platformCenterPx.y,
+    });
   };
 
-  const refineHoles = () => {
-    const video = videoRef.current;
-    if (!video || !trial?.arena) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0);
-    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const gray = rgbaToGray(image.data, canvas.width, canvas.height);
-    const holes = trial.arena.holeCentersPx.map((hole) => {
-      const refined = darkestLocalCenter(gray, hole, 10, trial.arena!.holeRadiusPx);
-      return { x: refined.x, y: refined.y };
-    });
-    setArena(trial.id, {
-      ...trial.arena,
-      holeCentersPx: holes,
-      holeSources: holes.map(() => "refined"),
-    });
+  const goToStep = (next: SetupStep) => {
+    if (!trial) return;
+    if (next === "platform-center") {
+      if (arena) {
+        setDraftCenter(undefined);
+        setDraftEdge(undefined);
+        clearArena(trial.id);
+      } else {
+        setDraftCenter(undefined);
+        setDraftEdge(undefined);
+      }
+      setStep("platform-center");
+      return;
+    }
+    if (next === "platform-edge") {
+      if (arena) {
+        setDraftCenter(arena.platformCenterPx);
+        setDraftEdge(undefined);
+        clearArena(trial.id);
+      } else {
+        setDraftEdge(undefined);
+      }
+      setStep("platform-edge");
+      return;
+    }
+    if (next === "first-hole") {
+      if (arena) {
+        draftsFromArena(arena);
+        clearArena(trial.id);
+      }
+      setStep("first-hole");
+      return;
+    }
+    if (arena) setStep("adjust");
+  };
+
+  const goBack = () => {
+    if (step === "adjust") goToStep("first-hole");
+    else if (step === "first-hole") goToStep("platform-edge");
+    else if (step === "platform-edge") goToStep("platform-center");
+  };
+
+  const resetArenaSetup = () => {
+    goToStep("platform-center");
   };
 
   const geometryNote = useMemo(() => {
@@ -310,17 +325,25 @@ export function ArenaPage() {
             </Banner>
           )}
           <p className="micro" style={{ marginTop: 8 }}>
-            Click to place · Arrow keys for precision
+            Click to place · Arrow keys for precision · Back to redo the last click
           </p>
           <div className="row" style={{ marginTop: 12 }}>
-            <button type="button" className="btn-secondary" onClick={suggestPlatform}>
-              Suggest platform
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={goBack}
+              disabled={step === "platform-center" && !arena && !draftCenter}
+            >
+              Back
             </button>
-            {arena ? (
-              <button type="button" className="btn-secondary" onClick={refineHoles}>
-                Refine holes locally
-              </button>
-            ) : null}
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={resetArenaSetup}
+              disabled={step === "platform-center" && !arena && !draftCenter && !draftEdge}
+            >
+              Reset arena
+            </button>
           </div>
         </section>
         <section className="panel">
@@ -328,13 +351,36 @@ export function ArenaPage() {
           {geometryNote ? <p className="help">{geometryNote}</p> : null}
           <ol className="setup-list">
             <li>
-              <StepMark done={centerDone} /> Platform center
+              <button
+                type="button"
+                className="btn-ghost setup-step"
+                onClick={() => goToStep("platform-center")}
+                aria-current={step === "platform-center" ? "step" : undefined}
+              >
+                <StepMark done={centerDone} /> Platform center
+              </button>
             </li>
             <li>
-              <StepMark done={edgeDone} /> Platform edge
+              <button
+                type="button"
+                className="btn-ghost setup-step"
+                onClick={() => goToStep("platform-edge")}
+                disabled={!centerDone && !arena}
+                aria-current={step === "platform-edge" ? "step" : undefined}
+              >
+                <StepMark done={edgeDone} /> Platform edge
+              </button>
             </li>
             <li>
-              <StepMark done={holeDone} /> First hole
+              <button
+                type="button"
+                className="btn-ghost setup-step"
+                onClick={() => goToStep("first-hole")}
+                disabled={!edgeDone && !arena}
+                aria-current={step === "first-hole" ? "step" : undefined}
+              >
+                <StepMark done={holeDone} /> First hole
+              </button>
             </li>
             <li>
               <StepMark done={targetDone} /> Target hole
@@ -343,6 +389,7 @@ export function ArenaPage() {
               <StepMark done={calibrated} /> Physical scale
             </li>
           </ol>
+          <p className="help">Click a completed step to redo it. Later steps are cleared.</p>
 
           {donor && trial && !arena ? (
             <Banner kind="info">

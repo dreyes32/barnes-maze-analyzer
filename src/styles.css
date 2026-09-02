@@ -889,6 +889,17 @@ details.advanced {
   font-size: 14px;
 }
 
+.setup-step {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 4px 6px;
+  font-weight: 400;
+}
+
+.setup-step[aria-current="step"] {
+  font-weight: 600;
+}
+
 .job-step-waiting { color: var(--text-muted); }
 .job-step-active { font-weight: 600; }
 .job-step-done { color: var(--success); }

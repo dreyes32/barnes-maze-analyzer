@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { DEFAULT_PARAMETERS } from "../domain/defaults";
 import { createId, nowIso } from "../domain/ids";
 import { describeParameterImpact, formatParameterImpact, recomputeSession, recomputeTrial } from "../domain/pipeline";
-import { applyArenaToTrial, applyUpstreamParameterChange, buildTrackingProvenance } from "../domain/trackingProvenance";
+import {
+  applyArenaToTrial,
+  applyUpstreamParameterChange,
+  buildTrackingProvenance,
+  markTrackingStale,
+} from "../domain/trackingProvenance";
 import { createEmptySession, createTrial, createTrialGroup, removeTrialFromSession } from "../domain/session";
 import type {
   AnalysisParameters,
@@ -60,6 +65,7 @@ type SessionState = {
   deleteGroup: (groupId: string) => void;
   moveTrialToGroup: (trialId: string, groupId?: string) => void;
   setArena: (trialId: string, arena: ArenaGeometry) => void;
+  clearArena: (trialId: string) => void;
   reuseArena: (fromTrialId: string, toTrialId: string, arena: ArenaGeometry) => void;
   setTrackingResult: (trialId: string, tracking: TrackingResult) => void;
   setTrackingProgress: (progress: Partial<TrackingUi>) => void;
@@ -265,6 +271,24 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   setArena: (trialId, arena) => {
     const session = get().session;
     const next = recomputeSession(withTrial(session, trialId, (trial) => applyArenaToTrial(trial, arena)));
+    set({ session: next });
+    void get().persist();
+  },
+
+  clearArena: (trialId) => {
+    const session = get().session;
+    const next = recomputeSession(
+      withTrial(session, trialId, (trial) => ({
+        ...trial,
+        arena: undefined,
+        events: [],
+        metrics: undefined,
+        strategy: undefined,
+        qc: undefined,
+        tracking: trial.tracking ? markTrackingStale(trial.tracking) : undefined,
+        reviewStatus: "not-configured",
+      })),
+    );
     set({ session: next });
     void get().persist();
   },
