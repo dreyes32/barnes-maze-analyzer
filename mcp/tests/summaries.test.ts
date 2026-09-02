@@ -61,6 +61,14 @@ describe("cohort aggregation", () => {
     expect(summary?.animalCount).toBe(4);
     expect(summary?.review.trialsNeedingReview).toBe(1);
   });
+
+  it("returns the stored cohort label rather than the query casing", () => {
+    const trials = catalog.listTrials({ cohort: "control" });
+    expect(Array.isArray(trials)).toBe(true);
+    if (!Array.isArray(trials)) return;
+    const [summary] = buildCohortSummaries(trials, "control");
+    expect(summary?.cohort).toBe("Control");
+  });
 });
 
 describe("strategy summary", () => {

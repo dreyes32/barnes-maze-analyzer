@@ -78,7 +78,8 @@ function summarizeGroup(cohort: string | null, trials: CatalogTrial[]): CohortSu
 
 export function buildCohortSummaries(trials: CatalogTrial[], cohort?: string): CohortSummary[] {
   if (cohort !== undefined) {
-    return [summarizeGroup(cohort, trials)];
+    const stored = trials[0] ? metadataString(trials[0].trial.experimentMetadata.cohort) : null;
+    return [summarizeGroup(stored, trials)];
   }
   const groups = new Map<string, { label: string | null; trials: CatalogTrial[] }>();
   for (const item of trials) {

@@ -173,9 +173,10 @@ await check("trial / cohort / strategy / review summaries", () => {
   assert.ok("trial" in nullTrial);
   assert.equal(buildTrialSummary(nullTrial).metrics.primaryLatencySeconds, null);
 
-  const control = catalog.listTrials({ cohort: "Control" });
+  const control = catalog.listTrials({ cohort: "control" });
   assert.ok(Array.isArray(control));
-  const [cohort] = buildCohortSummaries(control, "Control");
+  const [cohort] = buildCohortSummaries(control, "control");
+  assert.equal(cohort?.cohort, "Control");
   assert.deepEqual(cohort?.metrics.primaryLatencySeconds, {
     count: 3,
     mean: 20,

@@ -157,11 +157,12 @@ Sample-video validation is documented under Known limitations; full-video CV is 
 - No DeepLabCut / SLEAP import in this version.
 - No trained search-strategy classifier.
 - No inter-rater scoring UI.
-- The optional MCP server queries completed derived analyses; it intentionally does not expose raw video processing or scientific corrections to agents.
 
 ## Optional agent interface
 
 Barnes Maze Analyzer includes an optional local MCP server for querying completed analyses through MCP-compatible AI clients. The server operates on `.barnes.json` exports, not video files.
+
+The MCP interface intentionally does not expose raw-video processing or scientific corrections to agents.
 
 **The MCP extension is not required to use the analyzer.** The normal scientist workflow remains the web UI.
 
