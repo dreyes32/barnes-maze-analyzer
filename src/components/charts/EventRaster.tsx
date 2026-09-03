@@ -1,15 +1,12 @@
 import type { ArenaGeometry, BehavioralEvent } from "../../domain/types";
 
-function timeTicks(duration: number): number[] {
+export function timeTicks(duration: number): number[] {
   if (!Number.isFinite(duration) || duration <= 0) return [0];
   const step = duration <= 60 ? 10 : duration <= 180 ? 30 : 60;
   const ticks = [0];
   for (let t = step; t < duration; t += step) ticks.push(t);
-  if (ticks[ticks.length - 1] !== Math.round(duration) && duration - ticks[ticks.length - 1] > step * 0.25) {
-    ticks.push(duration);
-  } else if (ticks[ticks.length - 1] < duration) {
-    ticks.push(duration);
-  }
+  const last = ticks[ticks.length - 1]!;
+  if (duration - last > step * 0.25) ticks.push(duration);
   return ticks;
 }
 
