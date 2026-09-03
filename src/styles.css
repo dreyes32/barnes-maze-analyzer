@@ -782,33 +782,39 @@ details.advanced {
   margin-top: var(--space-3);
 }
 
-.adjustment-panel {
+.stacked-panel {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding-top: var(--space-3);
 }
 
-.adjustment-panel .field label {
+.stacked-panel .field label {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
 }
 
-.adjustment-panel .field input[type="number"] {
-  width: 7.5rem;
+.stacked-panel .field input[type="number"],
+.stacked-panel .field select {
+  min-width: 12rem;
+  max-width: 100%;
 }
 
-.adjustment-panel h3 {
+.stacked-panel h3 {
   margin: 0;
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);
   font-size: 14px;
 }
 
-.adjustment-panel .help {
+.stacked-panel .help {
   margin: 0;
+}
+
+.stacked-panel details.advanced {
+  margin-top: 0;
 }
 
 .menu {

@@ -448,7 +448,8 @@ export function ArenaPage() {
 
           {arena ? (
             <>
-              <p className="help" style={{ marginTop: 12 }}>
+              <div className="stacked-panel">
+              <p className="help">
                 {calibrated
                   ? `Arena calibrated · ${arena.holeCentersPx.length} holes · Target: Hole ${arena.targetHoleIndex + 1} · ${arena.platformDiameterCm} cm platform`
                   : `Geometry ready · ${arena.holeCentersPx.length} holes generated · Target: Hole ${arena.targetHoleIndex + 1}. Physical scale required for distance and speed.`}
@@ -487,7 +488,7 @@ export function ArenaPage() {
               </Field>
               <details className="advanced">
                 <summary>Adjustments</summary>
-                <div className="adjustment-panel">
+                <div className="stacked-panel">
                 <Field label="Hole radius (px)">
                   <input
                     type="number"
@@ -581,6 +582,7 @@ export function ArenaPage() {
                 </p>
                 </div>
               </details>
+              </div>
             </>
           ) : (
             <p className="help">Place the platform and one hole, or reuse a previous layout.</p>
