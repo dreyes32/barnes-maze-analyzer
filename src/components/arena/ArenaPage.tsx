@@ -487,6 +487,7 @@ export function ArenaPage() {
               </Field>
               <details className="advanced">
                 <summary>Adjustments</summary>
+                <div className="adjustment-panel">
                 <Field label="Hole radius (px)">
                   <input
                     type="number"
@@ -578,6 +579,7 @@ export function ArenaPage() {
                   {arena.holeSources?.filter((item) => item === "refined").length ?? 0} refined,{" "}
                   {arena.holeSources?.filter((item) => item === "manual").length ?? 0} manual.
                 </p>
+                </div>
               </details>
             </>
           ) : (
