@@ -526,7 +526,7 @@ export function ReviewPage() {
               ))}
             </ul>
             <h3>All events</h3>
-            <ul>
+            <ul className="issue-list event-list">
               {filteredEvents.map((event) => (
                 <EventRow
                   key={event.id}

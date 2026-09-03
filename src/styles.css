@@ -647,8 +647,10 @@ input[type="text"], input[type="number"], select, textarea {
   list-style: none;
   padding: 0;
   margin: 0 0 var(--space-4);
-  max-height: 14rem;
-  overflow: auto;
+}
+
+.event-list.issue-list {
+  margin-bottom: var(--space-4);
 }
 
 .strategy-override {

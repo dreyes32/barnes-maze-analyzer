@@ -21,6 +21,11 @@ test("demo analysis, correction, reload, parameter change, and CSV export", asyn
   await expect(page.getByRole("tab", { name: /Issues/ })).toBeVisible();
   await page.getByRole("tab", { name: /Events/ }).click();
   await expect(page.getByRole("heading", { name: "All events", exact: true })).toBeVisible();
+  const allEvents = page.locator("ul.issue-list.event-list");
+  await expect(allEvents).toBeVisible();
+  await expect
+    .poll(async () => allEvents.evaluate((el) => getComputedStyle(el).overflowY))
+    .toMatch(/auto|scroll/);
   await workflowStep(page, "Results").click();
   await expect(page.getByText("Primary latency", { exact: true })).toBeVisible();
   const pathBefore = await page.locator(".metric").filter({ hasText: "Path length" }).locator("dd").innerText();
