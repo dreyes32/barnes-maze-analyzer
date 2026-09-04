@@ -111,4 +111,68 @@ describe("metrics", () => {
     expect(metrics.targetQuadrantTimeSeconds).toBeCloseTo(1);
     expect(metrics.targetQuadrantPercent).toBeCloseTo(100 / 3);
   });
+
+  it("does not use an escape recorded for a different target hole", () => {
+    const events: BehavioralEvent[] = [
+      {
+        id: "t",
+        type: "target-investigation",
+        holeIndex: 7,
+        startSeconds: 9.25,
+        confidence: 0.9,
+        evidence: [],
+        source: "automatic",
+      },
+      {
+        id: "e",
+        type: "escape-entry",
+        holeIndex: 0,
+        startSeconds: 184.583,
+        confidence: 1,
+        evidence: ["manually marked escape entry"],
+        source: "manual",
+      },
+    ];
+    const metrics = computeMetrics({
+      samples: [],
+      events,
+      arena: { ...arena, targetHoleIndex: 7 },
+      trialStartSeconds: 0,
+    });
+    expect(metrics.totalLatencySeconds).toBeNull();
+    expect(metrics.unavailableReasons.some((reason) => reason.includes("Hole 1") && reason.includes("Hole 8"))).toBe(
+      true,
+    );
+  });
+
+  it("uses a matching escape when a stale escape for another hole is also present", () => {
+    const events: BehavioralEvent[] = [
+      {
+        id: "old",
+        type: "escape-entry",
+        holeIndex: 0,
+        startSeconds: 10,
+        confidence: 1,
+        evidence: [],
+        source: "manual",
+      },
+      {
+        id: "fresh",
+        type: "escape-entry",
+        holeIndex: 7,
+        startSeconds: 20,
+        confidence: 1,
+        evidence: [],
+        source: "manual",
+      },
+    ];
+    const metrics = computeMetrics({
+      samples: [],
+      events,
+      arena: { ...arena, targetHoleIndex: 7 },
+      trialStartSeconds: 0,
+    });
+    expect(metrics.totalLatencySeconds).toBe(20);
+    expect(metrics.unavailableReasons.some((reason) => reason.includes("current target"))).toBe(false);
+  });
 });

@@ -1,3 +1,4 @@
+import { escapeConflictsWithTarget, escapeTargetMismatchReason } from "./metrics";
 import type { QCSummary, ReviewIssue, TrackingSample, TrialRecord } from "./types";
 
 function missingIntervals(samples: TrackingSample[]): Array<{ start: number; end: number }> {
@@ -148,6 +149,22 @@ export function buildReviewIssues(trial: TrialRecord): ReviewIssue[] {
   }
 
   for (const event of trial.events) {
+    if (
+      event.type === "escape-entry" &&
+      trial.arena &&
+      event.holeIndex !== undefined &&
+      escapeConflictsWithTarget(event, trial.arena.targetHoleIndex)
+    ) {
+      issues.push({
+        id: `${trial.id}-stale-escape-${event.id}`,
+        kind: "stale-escape",
+        startSeconds: event.startSeconds,
+        endSeconds: event.endSeconds ?? event.startSeconds,
+        summary: escapeTargetMismatchReason(event.holeIndex, trial.arena.targetHoleIndex),
+        trialId: trial.id,
+      });
+      continue;
+    }
     if (event.type === "escape-entry" && event.source === "automatic" && event.confidence < 0.7) {
       issues.push({
         id: `${trial.id}-escape-${event.id}`,

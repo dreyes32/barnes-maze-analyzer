@@ -2,6 +2,37 @@ import { distance, isInTargetQuadrant, pixelsPerCm } from "./geometry";
 import { elapsedSeconds } from "./timebase";
 import type { ArenaGeometry, BehavioralEvent, TrackingSample, TrialMetrics } from "./types";
 
+export function escapeConflictsWithTarget(
+  event: BehavioralEvent,
+  targetHoleIndex: number | undefined,
+): boolean {
+  return (
+    event.type === "escape-entry" &&
+    targetHoleIndex !== undefined &&
+    event.holeIndex !== undefined &&
+    event.holeIndex !== targetHoleIndex
+  );
+}
+
+export function escapeTargetMismatchReason(escapeHoleIndex: number, targetHoleIndex: number): string {
+  return (
+    `Escape entry references Hole ${escapeHoleIndex + 1}, but the current target is Hole ${targetHoleIndex + 1}. ` +
+    "Review the escape event before total latency can be calculated."
+  );
+}
+
+export function selectEscapeForMetrics(
+  events: BehavioralEvent[],
+  targetHoleIndex: number | undefined,
+): { escape?: BehavioralEvent; mismatched: BehavioralEvent[] } {
+  const escapes = events.filter((event) => event.type === "escape-entry");
+  const mismatched = escapes.filter((event) => escapeConflictsWithTarget(event, targetHoleIndex));
+  const matching = escapes
+    .filter((event) => !escapeConflictsWithTarget(event, targetHoleIndex))
+    .sort((left, right) => left.startSeconds - right.startSeconds);
+  return { escape: matching[0], mismatched };
+}
+
 function median(values: number[]): number | null {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -23,9 +54,7 @@ export function computeMetrics(options: {
     .filter((event) => event.type === "target-investigation")
     .sort((a, b) => a.startSeconds - b.startSeconds);
   const firstTarget = targetInvestigations[0];
-  const escape = events
-    .filter((event) => event.type === "escape-entry")
-    .sort((a, b) => a.startSeconds - b.startSeconds)[0];
+  const { escape, mismatched } = selectEscapeForMetrics(events, arena?.targetHoleIndex);
 
   const primaryLatencySeconds = firstTarget ? firstTarget.startSeconds - trialStart : null;
   if (!firstTarget) {
@@ -34,7 +63,14 @@ export function computeMetrics(options: {
 
   let totalLatencySeconds: number | null = null;
   if (!escape) {
-    unavailableReasons.push("Total latency is unavailable until an escape entry is confirmed or inferred.");
+    if (mismatched.length > 0 && arena) {
+      for (const stale of mismatched) {
+        if (stale.holeIndex === undefined) continue;
+        unavailableReasons.push(escapeTargetMismatchReason(stale.holeIndex, arena.targetHoleIndex));
+      }
+    } else {
+      unavailableReasons.push("Total latency is unavailable until an escape entry is confirmed or inferred.");
+    }
   } else if (escape.confidence < 0.55 && escape.source === "automatic") {
     unavailableReasons.push(
       `Escape entry uncertain — review ${escape.startSeconds.toFixed(1)} s. Total latency is shown as inferred, not confirmed.`,

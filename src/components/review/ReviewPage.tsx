@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { investigationTypeForHole } from "../../domain/events";
 import { createId } from "../../domain/ids";
+import { escapeConflictsWithTarget } from "../../domain/metrics";
 import { buildReviewIssues } from "../../domain/qc";
 import { describeTimebase, sourceFrameDurationSeconds } from "../../domain/timebase";
 import type { BehavioralEvent, Point, ReviewIssueKind } from "../../domain/types";
@@ -638,6 +639,8 @@ function issueGuidance(kind: ReviewIssueKind): string {
       return "A manual correction is recorded at this time.";
     case "possible-escape":
       return "Possible escape entry — confirm or reject in the Events tab.";
+    case "stale-escape":
+      return "This escape was recorded for a different target hole. Reject it or mark a new escape for the current target. Total latency stays empty until then.";
     case "ambiguous-investigation":
       return "This hole investigation is low-confidence. Confirm, edit, or reject it.";
     case "large-jump":
@@ -683,6 +686,7 @@ function EventRow({
       : event.type === "escape-entry"
         ? "escape entry"
         : "investigation";
+  const staleEscape = event.type === "escape-entry" && escapeConflictsWithTarget(event, targetHole);
   return (
     <li>
       <button type="button" className="btn-ghost" onClick={() => seekToTime(event.startSeconds)}>
@@ -690,24 +694,27 @@ function EventRow({
         <div className="help">
           {event.startSeconds.toFixed(2)}
           {event.endSeconds !== undefined ? `–${event.endSeconds.toFixed(2)}` : ""} s · {event.source === "manual" ? "◆ Manual" : "● Automatic"}
+          {staleEscape ? " · does not match current target" : ""}
         </div>
       </button>
-      {event.type === "escape-entry" && event.source === "automatic" ? (
+      {event.type === "escape-entry" && (event.source === "automatic" || staleEscape) ? (
         <span className="row">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() =>
-              addCorrection(trialId, {
-                timestampSeconds: event.startSeconds,
-                kind: "event-edit",
-                previousValue: event,
-                correctedValue: { ...event, source: "automatic-confirmed", confidence: 1 },
-              })
-            }
-          >
-            Confirm escape
-          </button>
+          {event.source === "automatic" && !staleEscape ? (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() =>
+                addCorrection(trialId, {
+                  timestampSeconds: event.startSeconds,
+                  kind: "event-edit",
+                  previousValue: event,
+                  correctedValue: { ...event, source: "automatic-confirmed", confidence: 1 },
+                })
+              }
+            >
+              Confirm escape
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn-danger"

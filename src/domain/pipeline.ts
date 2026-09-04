@@ -1,6 +1,6 @@
 import { applyCleanup, applyManualCorrections } from "./cleanup";
 import { detectEvents } from "./events";
-import { computeMetrics } from "./metrics";
+import { computeMetrics, escapeConflictsWithTarget } from "./metrics";
 import { computeQc, qcWarningForTargetDisappearance } from "./qc";
 import { computeStrategy, strategyOverrideFromCorrections } from "./strategy";
 import { isTrackingStale, migrateTrackingResult } from "./trackingProvenance";
@@ -17,6 +17,10 @@ export function deriveReviewStatus(trial: TrialRecord): ReviewStatus {
   if (trial.arena.targetHoleIndex < 0) return "not-configured";
   if (!trial.tracking || trial.tracking.rawSamples.length === 0) return "arena-ready";
   if (trial.tracking.cancelled) return "needs-review";
+  const targetHoleIndex = trial.arena.targetHoleIndex;
+  if (trial.events.some((event) => escapeConflictsWithTarget(event, targetHoleIndex))) {
+    return "needs-review";
+  }
   if (trial.reviewStatus === "complete") return "complete";
   if (trial.reviewStatus === "reviewed") return "reviewed";
   return "needs-review";
@@ -56,6 +60,11 @@ export function recomputeTrial(trial: TrialRecord, parameters: AnalysisParameter
   const qc = computeQc(effectiveSamples, tracking.rawSamples);
   const extra = qcWarningForTargetDisappearance({ ...trial, events, tracking: { ...tracking, effectiveSamples } });
   if (extra && !qc.warnings.includes(extra)) qc.warnings.push(extra);
+  for (const reason of metrics.unavailableReasons) {
+    if (reason.includes("current target") && !qc.warnings.includes(reason)) {
+      qc.warnings.push(reason);
+    }
+  }
   if (cleaned.outlierCount > 0) {
     qc.warnings.push(`${cleaned.outlierCount} observations exceed the movement outlier threshold.`);
   }
@@ -77,6 +86,7 @@ export function recomputeTrial(trial: TrialRecord, parameters: AnalysisParameter
     qc,
     reviewStatus: deriveReviewStatus({
       ...trial,
+      events,
       tracking: { ...tracking, effectiveSamples },
     }),
   };

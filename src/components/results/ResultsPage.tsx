@@ -101,7 +101,10 @@ export function ResultsPage() {
             label="Total latency"
             value={trial.metrics?.totalLatencySeconds}
             unit="s"
-            missing="Escape not confirmed"
+            missing={
+              trial.metrics?.unavailableReasons.find((reason) => reason.includes("current target")) ??
+              "Escape not confirmed"
+            }
             definition="Time from trial start to a confirmed escape into the target hole."
             action={
               trial.metrics?.totalLatencySeconds == null ? (

@@ -277,6 +277,7 @@ export type ReviewIssueKind =
   | "large-jump"
   | "missing-interval"
   | "possible-escape"
+  | "stale-escape"
   | "ambiguous-investigation"
   | "manual-correction";
 
