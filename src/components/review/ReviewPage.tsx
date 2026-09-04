@@ -7,6 +7,7 @@ import { describeTimebase, sourceFrameDurationSeconds } from "../../domain/timeb
 import type { BehavioralEvent, Point, ReviewIssueKind } from "../../domain/types";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
+import { drawHoleNumber } from "../drawHoleNumber";
 import { Banner, PageHeader, WorkspaceFooter } from "../ui";
 import { MethodPanel } from "../method/MethodPanel";
 
@@ -80,8 +81,7 @@ export function ReviewPage() {
         ctx.arc(hole.x * sx, hole.y * sy, trial.arena!.holeRadiusPx * sx, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle = "#fff";
-        ctx.fillText(String(holeIndex + 1), hole.x * sx + 4, hole.y * sy - 4);
+        drawHoleNumber(ctx, String(holeIndex + 1), hole.x * sx, hole.y * sy);
       });
       if (sample.body) {
         ctx.fillStyle = sample.source === "manual" ? "#3d2a78" : "#1f4d5c";
@@ -436,7 +436,7 @@ export function ReviewPage() {
             {issues.length === 0 ? (
               <p className="help">You can still inspect the trajectory manually.</p>
             ) : currentIssue ? (
-              <article className="panel" style={{ marginBottom: 12 }}>
+              <article className="panel">
                 <strong>{currentIssue.kind.replace(/-/g, " ")}</strong>
                 <p className="help">
                   {currentIssue.startSeconds.toFixed(1)}–{currentIssue.endSeconds.toFixed(1)} s
@@ -445,7 +445,7 @@ export function ReviewPage() {
                 <p className="help">{issueGuidance(currentIssue.kind)}</p>
               </article>
             ) : null}
-            <div className="row">
+            <div className="row issue-nav">
               <button
                 type="button"
                 className="btn-secondary"

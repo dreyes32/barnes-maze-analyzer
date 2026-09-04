@@ -12,6 +12,7 @@ import { estimateBrightCircle, rgbaToGray } from "../../domain/image";
 import type { ArenaGeometry, Point } from "../../domain/types";
 import { currentTrialSelector, useSessionStore } from "../../state/sessionStore";
 import { getVideoUrl } from "../../state/videoRegistry";
+import { drawHoleNumber } from "../drawHoleNumber";
 import { Banner, Field, PageHeader, WorkspaceFooter } from "../ui";
 
 type SetupStep = "platform-center" | "platform-edge" | "first-hole" | "adjust";
@@ -50,11 +51,17 @@ function drawArena(
     ctx.arc(hole.x * sx, hole.y * sy, (arena.holeRadiusPx ?? 8) * sx, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#111";
-    ctx.font = "12px sans-serif";
-    ctx.fillText(String(index + 1), hole.x * sx + 6, hole.y * sy - 6);
+    const cx = hole.x * sx;
+    const cy = hole.y * sy;
+    drawHoleNumber(ctx, String(index + 1), cx, cy);
     if (isTarget) {
-      ctx.fillText("TARGET", hole.x * sx + 6, hole.y * sy + 14);
+      ctx.fillStyle = "#6b2d2d";
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("TARGET", cx, cy + (arena.holeRadiusPx ?? 8) * sx + 4);
+      ctx.textAlign = "start";
+      ctx.textBaseline = "alphabetic";
     }
   });
 }

@@ -112,6 +112,22 @@ test("arena treats zero diameter as uncalibrated", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Set diameter" }).first()).toBeVisible();
 });
 
+test("review issue navigation is spaced above the issue list", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Load demo analysis" }).click();
+  await expect(page.getByText("Example analysis", { exact: true })).toBeVisible();
+  await workflowStep(page, "Review").click();
+  const issueNav = page.locator(".issue-nav");
+  await expect(issueNav).toBeVisible();
+  await expect(page.getByRole("button", { name: "Previous issue" })).toBeVisible();
+  await expect
+    .poll(async () => issueNav.evaluate((el) => getComputedStyle(el).marginBottom))
+    .toBe("16px");
+  await workflowStep(page, "Arena").click();
+  await expect(page.getByRole("heading", { name: "Arena", exact: true })).toBeVisible();
+  await expect(page.getByText(/Target: Hole/)).toBeVisible();
+});
+
 test("no major axe violations on demo results", async ({ page }) => {
   await page.goto("./");
   await page.getByRole("button", { name: "Load demo analysis" }).click();

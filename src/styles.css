@@ -731,6 +731,10 @@ input[type="text"], input[type="number"], select, textarea {
   font-weight: 600;
 }
 
+.issue-nav {
+  margin: var(--space-3) 0 var(--space-4);
+}
+
 .issue-list {
   display: flex;
   flex-direction: column;
